@@ -41,16 +41,16 @@ class ACDCDataset(Dataset):
             patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz"
         )
 
-        end_diastole_image = end_diastole_image.get_fdata()
-        end_diastole_label = end_diastole_label.get_fdata()
-        end_systole_image = end_systole_image.get_fdata()
-        end_systole_label = end_systole_label.get_fdata()
+        end_diastole_image = end_diastole_image.get_fdata(dtype=np.float32)
+        end_diastole_label = end_diastole_label.get_fdata(dtype=np.float32)
+        end_systole_image = end_systole_image.get_fdata(dtype=np.float32)
+        end_systole_label = end_systole_label.get_fdata(dtype=np.float32)
 
         sample = {
             "end_diastole": end_diastole_image,
-            "end_diastole_label": end_diastole_label,
-            "end_systole": end_systole_image,
-            "end_systole_label": end_systole_label,
+            "end_diastole_label": end_diastole_label
+            # "end_systole": np.expand_dims(end_systole_image, axis=0),
+            # "end_systole_label": np.expand_dims(end_systole_label, axis=0),
         }
 
         if self.transform:
