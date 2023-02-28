@@ -7,10 +7,11 @@ from torch.utils.data import Dataset
 
 
 class ACDCDataset(Dataset):
-    def __init__(self, data_dir: str | Path, train=True, transform=None):
+    def __init__(self, data_dir: str | Path, train=True, transform=None, percentage_data=1.0):
         self.data_dir = Path(data_dir)
         self.data_dir = self.data_dir / "training" if train else self.data_dir / "testing"
         self.patients = sorted([f.path for f in os.scandir(self.data_dir) if f.is_dir()])
+        self.patients = self.patients[: int(len(self.patients) * percentage_data)]
         self.transform = transform
 
     def __len__(self):
