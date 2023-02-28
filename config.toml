@@ -1,0 +1,4 @@
+[hyperparameters]
+epochs = 100
+learning_rate = 1e-5
+validation_split = 0.8
