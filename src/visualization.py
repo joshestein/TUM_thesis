@@ -18,6 +18,7 @@ def visualize_loss_curves(train_loss_values, validation_loss_values, val_interva
     plt.xlabel("epoch")
     plt.plot(x, validation_loss_values)
     plt.savefig(out_dir / "loss_curves.png")
+    plt.show()
 
 
 def visualize_model_outputs(
