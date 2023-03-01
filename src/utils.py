@@ -1,6 +1,36 @@
 import os
 from pathlib import Path
 
+import torch
+from monai.optimizers import LearningRateFinder
+from torch.optim import Optimizer
+from torch.utils.data import DataLoader
+
+
+def find_optimal_learning_rate(
+    model: torch.nn.Module,
+    optimizer: Optimizer,
+    criterion: torch.nn.Module,
+    device: str | torch.device,
+    train_loader: DataLoader,
+    start_lr: float,
+    end_lr: int,
+    iterations: int,
+    image_key: str = "end_diastole",
+    label_key: str = "end_diastole_label",
+):
+    lr_finder = LearningRateFinder(model, optimizer, criterion, device=device)
+    lr_finder.range_test(
+        train_loader,
+        start_lr=start_lr,
+        end_lr=end_lr,
+        num_iter=iterations,
+        image_extractor=lambda x: x[image_key],
+        label_extractor=lambda x: x[label_key],
+    )
+    steepest_lr, _ = lr_finder.get_steepest_gradient()
+    return steepest_lr
+
 
 def setup_dirs(root_dir=Path(os.getcwd())):
     data_dir = root_dir / "data"
