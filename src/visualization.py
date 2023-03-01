@@ -21,7 +21,7 @@ def visualize_loss_curves(train_loss_values, validation_loss_values, val_interva
     plt.show()
 
 
-def visualize_model_outputs(
+def visualize_predictions(
     model: torch.nn.Module,
     model_file: str | Path,
     val_loader: DataLoader,
