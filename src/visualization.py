@@ -5,7 +5,9 @@ from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
 
-def visualize_loss_curves(train_loss_values, validation_loss_values, val_interval: int, out_dir: Path):
+def visualize_loss_curves(
+    train_loss_values, validation_metrics: dict[str, list[float] | list[list[float]]], val_interval: int, out_dir: Path
+):
     plt.figure("train", (12, 6))
     plt.subplot(1, 2, 1)
     plt.title("Epoch Average Loss")
@@ -13,10 +15,19 @@ def visualize_loss_curves(train_loss_values, validation_loss_values, val_interva
     plt.xlabel("epoch")
     plt.plot(x, train_loss_values)
     plt.subplot(1, 2, 2)
-    plt.title("Val Mean Dice")
-    x = [val_interval * (i + 1) for i in range(len(validation_loss_values))]
+    plt.title("Val Metrics")
+    for metric_name, metric_values in validation_metrics.items():
+        if isinstance(metric_values[0], list):
+            for i in range(len(metric_values[0])):
+                plt.plot(
+                    [val_interval * (i + 1) for i in range(len(metric_values))],
+                    [m[i] for m in metric_values],
+                    label=f"{metric_name}_{i}",
+                )
+        else:
+            plt.plot([val_interval * (i + 1) for i in range(len(metric_values))], metric_values, label=metric_name)
+
     plt.xlabel("epoch")
-    plt.plot(x, validation_loss_values)
     plt.savefig(out_dir / "loss_curves.png")
     plt.show()
 
