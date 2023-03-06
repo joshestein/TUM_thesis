@@ -17,14 +17,18 @@ def train(
     optimizer: torch.optim.Optimizer,
     val_interval: int,
     epochs: int,
-    metric: CumulativeIterationMetric,
+    metrics: dict[str, CumulativeIterationMetric],
     device: str | torch.device,
     out_dir: str | os.PathLike,
 ):
     best_metric = -1
     best_metric_epoch = -1
+
     epoch_loss_values = []
-    metric_values = []
+    metric_values: dict[
+        str, list[float] | list[list[float]]
+    ] = {}  # For each metric, store a list of values one for each validation epoch
+
     post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
 
@@ -68,20 +72,32 @@ def train(
                     val_outputs = model(val_inputs)
                     val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
                     val_labels = [post_label(i) for i in decollate_batch(val_labels)]
-                    # compute metric for current iteration
-                    metric(y_pred=val_outputs, y=val_labels)
 
-                # aggregate the final mean dice result
-                metric = metric.aggregate().item()
-                # reset the status for next validation round
-                metric.reset()
+                    for metric in metrics.values():
+                        # compute metrics for current iteration
+                        metric(y_pred=val_outputs, y=val_labels)
 
-                early_stopper.check_early_stop(metric)
-                metric_values.append(metric)
+                for name, metric in metrics.items():
+                    # aggregate and reset metrics
+                    metric_value = metric.aggregate()
+                    metric_value = metric_value.item() if len(metric_value) == 1 else metric_value.tolist()
+                    metric.reset()
+
+                    if name not in metric_values:
+                        metric_values[name] = []
+
+                    metric_values[name].append(metric_value)
+                    # wandb.log({f"validation_{name}": metric})
+
+                    if name == "dice":
+                        dice_metric = metric_value
+                        early_stopper.check_early_stop(dice_metric)
+
+                # metric_values.append(metric)
                 # wandb.log({"validation_dice": metric})
 
-                if metric > best_metric:
-                    best_metric = metric
+                if dice_metric > best_metric:
+                    best_metric = dice_metric
                     best_metric_epoch = epoch + 1
                     torch.save(
                         model.state_dict(),
@@ -89,7 +105,7 @@ def train(
                     )
                     print(f"New best metric found: {best_metric}")
                 print(
-                    f"current epoch: {epoch + 1} current mean dice: {metric:.4f}"
+                    f"current epoch: {epoch + 1} current mean dice: {dice_metric:.4f}"
                     f"\nbest mean dice: {best_metric:.4f} "
                     f"at epoch: {best_metric_epoch}"
                 )
