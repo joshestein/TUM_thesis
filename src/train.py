@@ -1,6 +1,7 @@
 import os
 
 import torch
+import wandb
 from monai.data import decollate_batch
 from monai.metrics import CumulativeIterationMetric
 from monai.transforms import AsDiscrete, Compose
@@ -58,7 +59,7 @@ def train(
 
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
-        # wandb.log({"epoch_loss": epoch_loss})
+        wandb.log({"epoch_loss": epoch_loss})
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
 
         if (epoch + 1) % val_interval == 0:
@@ -87,14 +88,11 @@ def train(
                         metric_values[name] = []
 
                     metric_values[name].append(metric_value)
-                    # wandb.log({f"validation_{name}": metric})
+                    wandb.log({f"validation_{name}": metric_value})
 
                     if name == "dice":
                         dice_metric = metric_value
                         early_stopper.check_early_stop(dice_metric)
-
-                # metric_values.append(metric)
-                # wandb.log({"validation_dice": metric})
 
                 if dice_metric > best_metric:
                     best_metric = dice_metric
