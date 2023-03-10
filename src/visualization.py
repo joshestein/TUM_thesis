@@ -18,12 +18,13 @@ def visualize_loss_curves(
     plt.title("Val Metrics")
     for metric_name, metric_values in validation_metrics.items():
         if isinstance(metric_values[0], list):
-            for i in range(len(metric_values[0])):
-                plt.plot(
-                    [val_interval * (i + 1) for i in range(len(metric_values))],
-                    [m[i] for m in metric_values],
-                    label=f"{metric_name}_{i}",
-                )
+            continue
+            # for i in range(len(metric_values[0])):
+            #     plt.plot(
+            #         [val_interval * (i + 1) for i in range(len(metric_values))],
+            #         [m[i] for m in metric_values],
+            #         label=f"{metric_name}_{i}",
+            #     )
         else:
             plt.plot([val_interval * (i + 1) for i in range(len(metric_values))], metric_values, label=metric_name)
 
