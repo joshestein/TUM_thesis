@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import torch
 import wandb
@@ -21,6 +22,7 @@ def train(
     metrics: dict[str, CumulativeIterationMetric],
     device: str | torch.device,
     out_dir: str | os.PathLike,
+    early_stopper: Optional[EarlyStopper] = None,
 ):
     best_metric = -1
     best_metric_epoch = -1
@@ -32,8 +34,6 @@ def train(
 
     post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
-
-    early_stopper = EarlyStopper(patience=10)
 
     for epoch in range(epochs):
         print("-" * 10)
@@ -92,7 +92,7 @@ def train(
 
                     if name == "dice":
                         dice_metric = metric_value
-                        early_stopper.check_early_stop(dice_metric)
+                        early_stopper.check_early_stop(dice_metric) if early_stopper else None
 
                 if dice_metric > best_metric:
                     best_metric = dice_metric
@@ -108,7 +108,7 @@ def train(
                     f"at epoch: {best_metric_epoch}"
                 )
 
-        if early_stopper.stop:
+        if early_stopper and early_stopper.stop:
             print("Early stop")
             break
 
