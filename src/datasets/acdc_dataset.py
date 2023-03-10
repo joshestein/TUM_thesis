@@ -7,12 +7,20 @@ from torch.utils.data import Dataset
 
 
 class ACDCDataset(Dataset):
-    def __init__(self, data_dir: str | Path, train=True, transform=None, percentage_data=1.0):
+    def __init__(self, data_dir: str | Path, train=True, transform=None, full_volume=False, percentage_data=1.0):
+        """
+        :param data_dir: Root data dir, in which "training" and "testing" folders are expected
+        :param train: Flag used to read train/test data. If `True`, reads training data, otherwise reads testing data.
+        :param transform: Any transforms that should be applied
+        :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
+        :param percentage_data: The fraction of the data to use
+        """
         self.data_dir = Path(data_dir)
         self.data_dir = self.data_dir / "training" if train else self.data_dir / "testing"
         self.patients = sorted([f.path for f in os.scandir(self.data_dir) if f.is_dir()])
         self.patients = self.patients[: int(len(self.patients) * percentage_data)]
         self.transform = transform
+        self.full_volume = full_volume
 
     def __len__(self):
         return len(self.patients)
@@ -41,6 +49,11 @@ class ACDCDataset(Dataset):
             # "end_systole": np.expand_dims(end_systole_image, axis=0),
             # "end_systole_label": np.expand_dims(end_systole_label, axis=0),
         }
+
+        if self.full_volume:
+            full_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
+            full_volume = full_volume.get_fdata(dtype=np.float32)
+            sample["full_volume"] = full_volume
 
         if self.transform:
             sample = self.transform(sample)
