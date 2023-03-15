@@ -45,9 +45,9 @@ class ACDCDataset(Dataset):
 
         sample = {
             "end_diastole": end_diastole_image,
-            "end_diastole_label": end_diastole_label
-            # "end_systole": np.expand_dims(end_systole_image, axis=0),
-            # "end_systole_label": np.expand_dims(end_systole_label, axis=0),
+            "end_diastole_label": end_diastole_label,
+            "end_systole": end_systole_image,
+            "end_systole_label": end_systole_label,
         }
 
         if self.full_volume:
