@@ -38,8 +38,8 @@ def visualize_predictions(
     model_file: str | Path,
     val_loader: DataLoader,
     device: str | torch.device,
-    image_key: str,
-    label_key: str,
+    image_key: str = "end_diastole",
+    label_key: str = "end_diastole_label",
     slice_no: int = 0,
 ):
     model.load_state_dict(torch.load(model_file))
@@ -48,7 +48,7 @@ def visualize_predictions(
 
     with torch.no_grad():
         for i, val_data in enumerate(val_loader):
-            val_outputs = model(val_data["end_diastole"].to(device))
+            val_outputs = model(val_data[image_key].to(device))
             plt.figure("Check", (18, 6))
             plt.subplot(1, 3, 1)
             plt.title(f"Image {i}")
