@@ -26,13 +26,11 @@ def get_transforms(
     if label_keys is None:
         label_keys = ["end_diastole_label", "end_systole_label"]
 
-    train_transforms = Compose(
-        [
-            EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
-            Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
-            DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
-        ]
-    )
+    train_transforms = [
+        EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
+        Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
+        DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
+    ]
 
     if augment:
         train_transforms += [
@@ -54,4 +52,4 @@ def get_transforms(
         ToTensord(keys=[*image_keys, *label_keys]),
     ]
 
-    return train_transforms
+    return Compose(train_transforms)
