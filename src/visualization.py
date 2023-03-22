@@ -83,4 +83,3 @@ def visualize_slice(image: torch.Tensor, label: torch.Tensor, prediction: torch.
     plt.title(f"Prediction {index}")
     plt.imshow(prediction)
     plt.show()
-    pass
