@@ -16,9 +16,9 @@ from monai.utils import InterpolateMode
 
 
 def get_transforms(
+    augment: bool = True,
     image_keys: list[str] = None,
     label_keys: list[str] = None,
-    augment: bool = True,
 ):
     if image_keys is None:
         image_keys = ["end_diastole", "end_systole"]
