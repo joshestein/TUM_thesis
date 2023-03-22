@@ -44,7 +44,7 @@ def get_transforms(
             ),
             SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
             RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
-            # ResizeWithPadOrCrop(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
+            # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         ]
 
     train_transforms += [
