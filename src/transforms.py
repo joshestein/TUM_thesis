@@ -36,8 +36,12 @@ def get_transforms(
             RandZoomd(
                 keys=[*image_keys, *label_keys], min_zoom=0.85, max_zoom=1.25, mode=InterpolateMode.NEAREST, prob=0.5
             ),
-            NormalizeIntensityd(keys=[image_key], channel_wise=True),
-            ToTensord(keys=[image_key, label_key]),
+            SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
+            RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
+            # ResizeWithPadOrCrop(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
+            NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
+            ToTensord(keys=[*image_keys, *label_keys]),
         ]
     )
+
     return train_transforms
