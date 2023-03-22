@@ -48,17 +48,39 @@ def visualize_predictions(
 
     with torch.no_grad():
         for i, val_data in enumerate(val_loader):
-            val_outputs = model(val_data[image_key].to(device))
-            plt.figure("Check", (18, 6))
-            plt.subplot(1, 3, 1)
-            plt.title(f"Image {i}")
-            plt.imshow(val_data[image_key][0, 0, :, :, slice_no], cmap="gray")
-            plt.subplot(1, 3, 2)
-            plt.title(f"Label {i}")
-            plt.imshow(val_data[label_key][0, 0, :, :, slice_no])
-            plt.subplot(1, 3, 3)
-            plt.title(f"Output {i}")
-            plt.imshow(torch.argmax(val_outputs, dim=1).detach().cpu()[0, :, :, slice_no])
-            plt.show()
+            image, label = val_data[image_key].to(device), val_data[label_key].to(device)
+
+            if model.dimensions == 2:
+                image = image[..., slice_no]
+                label = label[..., slice_no]
+
+            visualize_slice(image, label, model(image), i, slice_no)
+
             if i == 2:
                 break
+
+
+def visualize_slice(image: torch.Tensor, label: torch.Tensor, prediction: torch.Tensor, index: int, slice_no=0):
+    # Get first image/label in batch, squeeze out channel dimension
+    image = image[0].squeeze()
+    label = label[0].squeeze()
+    prediction = torch.argmax(prediction, dim=1)[0].squeeze().detach().cpu()
+
+    # 3D input will be H x W x D, where D is number of slices - take only the `slice_no` slice
+    if image.ndim == 3:
+        image = image[..., slice_no]
+        label = label[..., slice_no]
+        prediction = prediction[..., slice_no]
+
+    plt.figure("Check", (18, 6))
+    plt.subplot(1, 3, 1)
+    plt.title(f"Image {index}")
+    plt.imshow(image, cmap="gray")
+    plt.subplot(1, 3, 2)
+    plt.title(f"Label {index}")
+    plt.imshow(label)
+    plt.subplot(1, 3, 3)
+    plt.title(f"Prediction {index}")
+    plt.imshow(prediction)
+    plt.show()
+    pass
