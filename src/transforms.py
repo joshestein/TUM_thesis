@@ -18,6 +18,7 @@ from monai.utils import InterpolateMode
 def get_transforms(
     image_keys: list[str] = None,
     label_keys: list[str] = None,
+    augment: bool = True,
 ):
     if image_keys is None:
         image_keys = ["end_diastole", "end_systole"]
@@ -30,6 +31,11 @@ def get_transforms(
             EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
             Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
             DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
+        ]
+    )
+
+    if augment:
+        train_transforms += [
             RandRotated(
                 keys=[*image_keys, *label_keys], range_x=0.52, range_y=0.52, range_z=0.52, prob=0.5
             ),  # 30 degrees
@@ -41,9 +47,11 @@ def get_transforms(
             SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
             RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
             # ResizeWithPadOrCrop(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
-            NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
-            ToTensord(keys=[*image_keys, *label_keys]),
         ]
-    )
+
+    train_transforms += [
+        NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
+        ToTensord(keys=[*image_keys, *label_keys]),
+    ]
 
     return train_transforms
