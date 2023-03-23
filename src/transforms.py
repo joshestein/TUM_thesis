@@ -29,6 +29,7 @@ def get_transforms(
     train_transforms = [
         EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
         Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
+        # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
         DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
     ]
 
