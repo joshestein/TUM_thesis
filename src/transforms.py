@@ -38,7 +38,8 @@ def get_transforms(
                 keys=[*image_keys, *label_keys], range_x=0.52, range_y=0.52, range_z=0.52, prob=0.5
             ),  # 30 degrees
             RandAdjustContrastd(keys=[*image_keys], gamma=(0.7, 1.5), prob=0.5),
-            RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=[0, 1, 2], prob=0.5),
+            RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=0, prob=0.5),
+            RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=1, prob=0.5),
             RandZoomd(
                 keys=[*image_keys, *label_keys], min_zoom=0.85, max_zoom=1.25, mode=InterpolateMode.NEAREST, prob=0.5
             ),
