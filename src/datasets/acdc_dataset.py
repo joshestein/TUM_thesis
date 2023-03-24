@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import monai.transforms
 import nibabel as nib
 import numpy as np
 from torch.utils.data import Dataset
@@ -15,13 +16,24 @@ def sample_slices(volume: np.ndarray, percentage_slices: float):
 
 
 class ACDCDataset(Dataset):
-    def __init__(self, data_dir: str | Path, train=True, transform=None, full_volume=False, percentage_data=1.0):
+    def __init__(
+        self,
+        data_dir: str | Path,
+        train: bool = True,
+        transform: monai.transforms.Compose = None,
+        full_volume: bool = False,
+        percentage_data: float = 1.0,
+        percentage_slices: float = 1.0,
+    ):
         """
         :param data_dir: Root data dir, in which "training" and "testing" folders are expected
         :param train: Flag used to read train/test data. If `True`, reads training data, otherwise reads testing data.
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
         :param percentage_data: The fraction of the data to use
+        :param percentage_slices: The fraction of slices to extract from a given 3D volume. The slices are extracted around
+            the center of the volume. For example, if `percentage_slices=0.5`, then the slices will be from the first quarter
+            to third quarter of the volume.
         """
         self.data_dir = Path(data_dir)
         self.data_dir = self.data_dir / "training" if train else self.data_dir / "testing"
@@ -29,6 +41,7 @@ class ACDCDataset(Dataset):
         self.patients = self.patients[: int(len(self.patients) * percentage_data)]
         self.transform = transform
         self.full_volume = full_volume
+        self.percentage_slices = percentage_slices
 
     def __len__(self):
         return len(self.patients)
