@@ -54,26 +54,32 @@ class ACDCDataset(Dataset):
         end_systole = int(config[1, 1])
 
         patient = patient_dir.name
-        end_diastole_image = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz")
-        end_diastole_label = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}_gt.nii.gz")
-        end_systole_image = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}.nii.gz")
-        end_systole_label = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz")
-
-        end_diastole_image = end_diastole_image.get_fdata(dtype=np.float32)
-        end_diastole_label = end_diastole_label.get_fdata(dtype=np.float32)
-        end_systole_image = end_systole_image.get_fdata(dtype=np.float32)
-        end_systole_label = end_systole_label.get_fdata(dtype=np.float32)
 
         sample = {
-            "end_diastole": end_diastole_image,
-            "end_diastole_label": end_diastole_label,
-            "end_systole": end_systole_image,
-            "end_systole_label": end_systole_label,
+            "end_diastole": nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz"),
+            "end_diastole_label": nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}_gt.nii.gz"),
+            "end_systole": nib.load(patient_dir / f"{patient}_frame{end_systole:02d}.nii.gz"),
+            "end_systole_label": nib.load(patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz"),
         }
 
+        for key, image in sample.items():
+            image = image.get_fdata(dtype=np.float32)
+            image = sample_slices(image, self.percentage_slices)
+            sample[key] = image
+
         if self.full_volume:
-            full_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
-            full_volume = full_volume.get_fdata(dtype=np.float32)
+            original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
+            original_volume = original_volume.get_fdata(dtype=np.float32)
+
+            height, width, slices, time_steps = original_volume.shape
+            num_resampled_slices = int(slices * self.percentage_slices)
+
+            full_volume = np.ndarray((height, width, num_resampled_slices, time_steps), dtype=np.float32)
+
+            # Sample slices for each volume at each time step
+            for time_step in range(original_volume.shape[-1]):
+                full_volume[..., time_step] = sample_slices(original_volume[..., time_step], self.percentage_slices)
+
             sample["full_volume"] = full_volume
 
         if self.transform:
