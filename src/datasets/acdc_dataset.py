@@ -6,6 +6,14 @@ import numpy as np
 from torch.utils.data import Dataset
 
 
+def sample_slices(volume: np.ndarray, percentage_slices: float):
+    slices = volume.shape[-1]
+    num_slices = int(slices * percentage_slices)
+    start_slice = slices // 2 - num_slices // 2
+    end_slice = start_slice + num_slices
+    return volume[..., start_slice:end_slice]
+
+
 class ACDCDataset(Dataset):
     def __init__(self, data_dir: str | Path, train=True, transform=None, full_volume=False, percentage_data=1.0):
         """
