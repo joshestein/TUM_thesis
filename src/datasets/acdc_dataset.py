@@ -8,6 +8,9 @@ from torch.utils.data import Dataset
 
 
 def sample_slices(volume: np.ndarray, percentage_slices: float):
+    if percentage_slices == 1.0:
+        return volume
+
     slices = volume.shape[-1]
     num_slices = int(slices * percentage_slices)
     start_slice = slices // 2 - num_slices // 2
