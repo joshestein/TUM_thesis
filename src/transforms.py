@@ -34,6 +34,8 @@ def get_transforms(
     ]
 
     if augment:
+        # Use trilinear interpolation for images and nearest neighbor for labels.
+        interpolation_keys = [InterpolateMode.TRILINEAR] * len(image_keys), [InterpolateMode.NEAREST] * len(label_keys)
         train_transforms += [
             RandRotated(
                 keys=[*image_keys, *label_keys], range_x=0.52, range_y=0.52, range_z=0.52, prob=0.5
@@ -42,7 +44,11 @@ def get_transforms(
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=0, prob=0.5),
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=1, prob=0.5),
             RandZoomd(
-                keys=[*image_keys, *label_keys], min_zoom=0.85, max_zoom=1.25, mode=InterpolateMode.NEAREST, prob=0.5
+                keys=[*image_keys, *label_keys],
+                min_zoom=0.85,
+                max_zoom=1.15,
+                mode=[key for nested_list in interpolation_keys for key in nested_list],  # flatten nested tuple
+                prob=0.5,
             ),
             SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
             RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
