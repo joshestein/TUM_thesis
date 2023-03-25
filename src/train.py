@@ -40,6 +40,13 @@ def train(
         step = 0
         for batch_data in train_loader:
             step += 1
+
+            # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
+            # This is because most 3D layers in Pytorch expect D before H, W
+            # However, for Monai metrics and dice loss, we need to rearrange to B, C, H, W, D
+            for key, image in batch_data.items():
+                batch_data[key] = image.permute(0, 1, 3, 4, 2)
+
             end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
                 batch_data["end_diastole"].to(device),
                 batch_data["end_systole"].to(device),
@@ -105,6 +112,9 @@ def validate(
     model.eval()
     with torch.no_grad():
         for val_data in val_loader:
+            for key, image in val_data.items():
+                val_data[key] = image.permute(0, 1, 3, 4, 2)
+
             end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
                 val_data["end_diastole"].to(device),
                 val_data["end_systole"].to(device),

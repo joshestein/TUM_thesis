@@ -12,6 +12,7 @@ from monai.transforms import (
     Resized,
     SpatialPadd,
     ToTensord,
+    Transposed,
 )
 from monai.utils import InterpolateMode
 
@@ -34,6 +35,8 @@ def get_transforms(
         # We use `Resize` since it is possible to get volumes with only a few slices, in which case padding would fail.
         Resized(keys=[*image_keys, *label_keys], spatial_size=(-1, -1, 16)),
         DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
+        # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
+        Transposed(keys=[*image_keys, *label_keys], indices=(0, 3, 1, 2)),
     ]
 
     if augment:
@@ -53,8 +56,8 @@ def get_transforms(
                 mode=[key for nested_list in interpolation_keys for key in nested_list],  # flatten nested tuple
                 prob=0.5,
             ),
-            SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16)),
-            RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
+            SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(16, 224, 224)),
+            RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(16, 224, 224), random_size=False),
             # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         ]
 
