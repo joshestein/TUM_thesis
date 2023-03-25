@@ -9,6 +9,7 @@ from monai.transforms import (
     RandRotated,
     RandSpatialCropd,
     RandZoomd,
+    Resized,
     SpatialPadd,
     ToTensord,
 )
@@ -30,6 +31,8 @@ def get_transforms(
         EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
         Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
         # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
+        # We use `Resize` since it is possible to get volumes with only a few slices, in which case padding would fail.
+        Resized(keys=[*image_keys, *label_keys], spatial_size=(-1, -1, 16)),
         DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
     ]
 
