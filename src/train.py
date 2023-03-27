@@ -72,7 +72,14 @@ def train(
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
 
         if (epoch + 1) % val_interval == 0:
-            validate(model=model, val_loader=val_loader, device=device, metrics=metrics, metric_values=metric_values)
+            validate(
+                model=model,
+                val_loader=val_loader,
+                device=device,
+                loss_function=loss_function,
+                metrics=metrics,
+                metric_values=metric_values,
+            )
 
             dice_metric = metric_values["dice"][-1]
             early_stopper.check_early_stop(dice_metric) if early_stopper else None
@@ -103,6 +110,7 @@ def validate(
     model: torch.nn.Module,
     val_loader: DataLoader,
     device: str | torch.device,
+    loss_function: torch.nn.Module,
     metrics: dict[str, CumulativeIterationMetric],
     metric_values,
 ):
@@ -111,7 +119,10 @@ def validate(
 
     model.eval()
     with torch.no_grad():
+        validation_loss = 0
+        step = 0
         for val_data in val_loader:
+            step += 1
             for key, image in val_data.items():
                 val_data[key] = image.permute(0, 1, 3, 4, 2)
 
@@ -125,12 +136,20 @@ def validate(
             val_inputs = torch.vstack((end_diastole, end_systole))
             val_labels = torch.vstack((end_diastole_labels, end_systole_labels))
             val_outputs = model(val_inputs)
+
+            loss = loss_function(val_outputs, val_labels)
+            validation_loss += loss.item()
+
             val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
             val_labels = [post_label(i) for i in decollate_batch(val_labels)]
 
             for metric in metrics.values():
                 # compute metrics for current iteration
                 metric(y_pred=val_outputs, y=val_labels)
+
+        validation_loss /= step
+        wandb.log({"validation_loss": validation_loss})
+        print(f"validation_loss: {validation_loss:.4f}")
 
         for name, metric in metrics.items():
             # aggregate and reset metrics
