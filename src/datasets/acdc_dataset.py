@@ -50,13 +50,12 @@ class ACDCDataset(Dataset):
         return len(self.patients)
 
     def __getitem__(self, idx):
-        patient_dir = Path(self.patients[idx])
-        config = np.loadtxt(patient_dir / "Info.cfg", dtype=str, delimiter=":")
+        patient_dir = Path(self.patients[0])
+        patient = patient_dir.name
 
+        config = np.loadtxt(patient_dir / "Info.cfg", dtype=str, delimiter=":")
         end_diastole = int(config[0, 1])
         end_systole = int(config[1, 1])
-
-        patient = patient_dir.name
 
         sample = {
             "end_diastole": nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz"),
