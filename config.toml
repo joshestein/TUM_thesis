@@ -1,6 +1,6 @@
 [hyperparameters]
 batch_size = 1
-epochs = 100
+epochs = 50
 learning_rate = 1e-5
 percentage_data = 1.0
 seed = 42
