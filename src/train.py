@@ -41,12 +41,6 @@ def train(
         for batch_data in train_loader:
             step += 1
 
-            # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
-            # This is because most 3D layers in Pytorch expect D before H, W
-            # However, for Monai metrics and dice loss, we need to rearrange to B, C, H, W, D
-            for key, image in batch_data.items():
-                batch_data[key] = image.permute(0, 1, 3, 4, 2)
-
             end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
                 batch_data["end_diastole"].to(device),
                 batch_data["end_systole"].to(device),
@@ -59,7 +53,12 @@ def train(
 
             optimizer.zero_grad()
             outputs = model(inputs)
-            loss = loss_function(outputs, labels)
+
+            # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
+            # This is because most 3D layers in Pytorch expect D before H, W
+            # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D
+            # We permute after passing through the model.
+            loss = loss_function(outputs.permute(0, 1, 3, 4, 2), labels.permute(0, 1, 3, 4, 2))
             loss.backward()
             optimizer.step()
 
@@ -123,8 +122,6 @@ def validate(
         step = 0
         for val_data in val_loader:
             step += 1
-            for key, image in val_data.items():
-                val_data[key] = image.permute(0, 1, 3, 4, 2)
 
             end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
                 val_data["end_diastole"].to(device),
@@ -136,6 +133,9 @@ def validate(
             val_inputs = torch.vstack((end_diastole, end_systole))
             val_labels = torch.vstack((end_diastole_labels, end_systole_labels))
             val_outputs = model(val_inputs)
+
+            val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
+            val_labels = val_labels.permute(0, 1, 3, 4, 2)
 
             loss = loss_function(val_outputs, val_labels)
             validation_loss += loss.item()
