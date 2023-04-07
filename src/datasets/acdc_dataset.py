@@ -4,15 +4,21 @@ from pathlib import Path
 import monai.transforms
 import nibabel as nib
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 
-def sample_slices(volume: np.ndarray, percentage_slices: float):
+def sample_slices(volume: np.ndarray, percentage_slices: float, random_slices=False):
     if percentage_slices == 1.0:
         return volume
 
     slices = volume.shape[-1]
     num_slices = int(slices * percentage_slices)
+
+    if random_slices:
+        indexes = torch.randperm(slices)[:num_slices]
+        return volume[:, indexes, :, :]
+
     start_slice = slices // 2 - num_slices // 2
     end_slice = start_slice + num_slices
     return volume[..., start_slice:end_slice]
