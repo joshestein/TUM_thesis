@@ -22,6 +22,8 @@ def get_transforms(
     image_keys: list[str] = None,
     label_keys: list[str] = None,
 ):
+    # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
+
     if image_keys is None:
         image_keys = ["end_diastole", "end_systole"]
 
@@ -56,12 +58,12 @@ def get_transforms(
                 mode=[key for nested_list in interpolation_keys for key in nested_list],  # flatten nested tuple
                 prob=0.5,
             ),
-            SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(16, 224, 224)),
-            RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(16, 224, 224), random_size=False),
-            # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         ]
 
     train_transforms += [
+        # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
+        SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(16, 224, 224)),
+        RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(16, 224, 224), random_size=False),
         NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
         ToTensord(keys=[*image_keys, *label_keys]),
     ]
