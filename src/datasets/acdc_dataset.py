@@ -56,7 +56,7 @@ class ACDCDataset(Dataset):
         return len(self.patients)
 
     def __getitem__(self, idx):
-        patient_dir = Path(self.patients[0])
+        patient_dir = Path(self.patients[idx])
         patient = patient_dir.name
 
         config = np.loadtxt(patient_dir / "Info.cfg", dtype=str, delimiter=":")
