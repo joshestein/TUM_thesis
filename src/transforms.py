@@ -44,9 +44,6 @@ def get_transforms(
         # Use trilinear interpolation for images and nearest neighbor for labels.
         interpolation_keys = [InterpolateMode.TRILINEAR] * len(image_keys), [InterpolateMode.NEAREST] * len(label_keys)
         train_transforms += [
-            # RandRotated(
-            #     keys=[*image_keys, *label_keys], range_x=0.52, range_y=0.52, range_z=0.52, prob=0.5
-            # ),  # 30 degrees
             RandAdjustContrastd(keys=[*image_keys], gamma=(0.7, 1.5), prob=0.5),
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=0, prob=0.5),
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=1, prob=0.5),
