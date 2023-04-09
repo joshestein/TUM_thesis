@@ -1,14 +1,11 @@
 from monai.transforms import (
     Compose,
-    DivisiblePadd,
     EnsureChannelFirstd,
     NormalizeIntensityd,
-    Orientationd,
     RandAdjustContrastd,
     RandFlipd,
     RandSpatialCropd,
     RandZoomd,
-    Resized,
     SpatialPadd,
     ToTensord,
     Transposed,
@@ -31,13 +28,8 @@ def get_transforms(
 
     train_transforms = [
         EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
-        Orientationd(keys=[*image_keys, *label_keys], axcodes="RAS"),
-        # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
-        # We use `Resize` since it is possible to get volumes with only a few slices, in which case padding would fail.
-        Resized(keys=[*image_keys, *label_keys], spatial_size=(-1, -1, 16)),
-        DivisiblePadd(keys=[*image_keys, *label_keys], k=16, mode="reflect"),
-        # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
-        Transposed(keys=[*image_keys, *label_keys], indices=(0, 3, 1, 2)),
+        NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
+        # Spacingd(keys=[*image_keys, *label_keys], pixdim=(1.25, 1.25, 10.0)),
     ]
 
     if augment:
@@ -58,9 +50,11 @@ def get_transforms(
 
     train_transforms += [
         # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
-        SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(16, 224, 224)),
-        RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(16, 224, 224), random_size=False),
-        NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
+        # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
+        SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16), mode="reflect"),
+        RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
+        # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
+        Transposed(keys=[*image_keys, *label_keys], indices=(0, 3, 1, 2)),
         ToTensord(keys=[*image_keys, *label_keys]),
     ]
 
