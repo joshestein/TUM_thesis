@@ -82,7 +82,7 @@ def train(
                 metric_values=metric_values,
             )
 
-            dice_metric = metric_values["dice"][-1]
+            dice_metric = metric_values["dice_with_background"][-1]
             early_stopper.check_early_stop(dice_metric) if early_stopper else None
 
             if dice_metric > best_metric:
