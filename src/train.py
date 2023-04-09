@@ -43,15 +43,7 @@ def train(
         for batch_data in train_loader:
             step += 1
 
-            end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
-                batch_data["end_diastole"].to(device),
-                batch_data["end_systole"].to(device),
-                batch_data["end_diastole_label"].to(device),
-                batch_data["end_systole_label"].to(device),
-            )
-
-            inputs = torch.vstack((end_diastole, end_systole))
-            labels = torch.vstack((end_diastole_labels, end_systole_labels))
+            inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
 
             optimizer.zero_grad()
             outputs = model(inputs)
@@ -127,15 +119,8 @@ def validate(
         for val_data in val_loader:
             step += 1
 
-            end_diastole, end_systole, end_diastole_labels, end_systole_labels = (
-                val_data["end_diastole"].to(device),
-                val_data["end_systole"].to(device),
-                val_data["end_diastole_label"].to(device),
-                val_data["end_systole_label"].to(device),
-            )
+            val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
 
-            val_inputs = torch.vstack((end_diastole, end_systole))
-            val_labels = torch.vstack((end_diastole_labels, end_systole_labels))
             val_outputs = model(val_inputs)
             loss = loss_function(val_outputs.permute(0, 1, 3, 4, 2), val_labels.permute(0, 1, 3, 4, 2))
             validation_loss += loss.item()

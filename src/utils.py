@@ -16,8 +16,8 @@ def find_optimal_learning_rate(
     start_lr: float,
     end_lr: int,
     iterations: int,
-    image_key: str = "end_diastole",
-    label_key: str = "end_diastole_label",
+    image_key: str = "image",
+    label_key: str = "label",
 ):
     lr_finder = LearningRateFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(

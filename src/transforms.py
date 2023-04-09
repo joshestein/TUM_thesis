@@ -14,46 +14,41 @@ from monai.transforms import (
 from monai.utils import InterpolateMode
 
 
-def get_transforms(
-    augment: bool = True,
-    image_keys: list[str] = None,
-    label_keys: list[str] = None,
-):
+def get_transforms(augment: bool = True):
     # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
 
-    if image_keys is None:
-        image_keys = ["end_diastole", "end_systole"]
-
-    if label_keys is None:
-        label_keys = ["end_diastole_label", "end_systole_label"]
+    keys = ["image", "label"]
 
     train_transforms = [
-        EnsureChannelFirstd(keys=[*image_keys, *label_keys], channel_dim="no_channel"),
-        NormalizeIntensityd(keys=[*image_keys], channel_wise=True),
+        EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
+        NormalizeIntensityd(keys=["image"], channel_wise=True),
         # Spacingd(keys=[*image_keys, *label_keys], pixdim=(1.25, 1.25, 10.0)),
     ]
 
     if augment:
-        # Use area interpolation for images and nearest neighbor for labels.
-        interpolation_keys = [InterpolateMode.AREA] * len(image_keys), [InterpolateMode.NEAREST_EXACT] * len(label_keys)
-        interpolation_mode = [key for nested_list in interpolation_keys for key in nested_list]  # flatten nested tuple
-
         train_transforms += [
-            RandAdjustContrastd(keys=[*image_keys], gamma=(0.8, 1.2), prob=0.5),
-            RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=0, prob=0.5),
-            RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=1, prob=0.5),
-            RandZoomd(keys=[*image_keys, *label_keys], min_zoom=0.85, max_zoom=1.15, mode=interpolation_mode, prob=0.5),
-            RandRotate90d(keys=[*image_keys, *label_keys], spatial_axes=(0, 1), prob=0.5),
+            RandAdjustContrastd(keys=["image"], gamma=(0.8, 1.2), prob=0.5),
+            RandFlipd(keys=keys, spatial_axis=0, prob=0.5),
+            RandFlipd(keys=keys, spatial_axis=1, prob=0.5),
+            RandZoomd(
+                keys=keys,
+                min_zoom=0.85,
+                max_zoom=1.15,
+                # Use area interpolation for images and nearest neighbor for labels.
+                mode=(InterpolateMode.AREA, InterpolateMode.NEAREST_EXACT),
+                prob=0.5,
+            ),
+            RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.5),
         ]
 
     train_transforms += [
         # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
-        SpatialPadd(keys=[*image_keys, *label_keys], spatial_size=(224, 224, 16), mode="reflect"),
-        RandSpatialCropd(keys=[*image_keys, *label_keys], roi_size=(224, 224, 16), random_size=False),
+        SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="reflect"),
+        RandSpatialCropd(keys=keys, roi_size=(224, 224, 16), random_size=False),
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
-        Transposed(keys=[*image_keys, *label_keys], indices=(0, 3, 1, 2)),
-        ToTensord(keys=[*image_keys, *label_keys]),
+        Transposed(keys=keys, indices=(0, 3, 1, 2)),
+        ToTensord(keys=keys),
     ]
 
     return Compose(train_transforms)

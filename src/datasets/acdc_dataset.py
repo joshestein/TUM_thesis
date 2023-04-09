@@ -63,17 +63,21 @@ class ACDCDataset(Dataset):
         end_diastole = int(config[0, 1])
         end_systole = int(config[1, 1])
 
-        sample = {
-            "end_diastole": nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz"),
-            "end_diastole_label": nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}_gt.nii.gz"),
-            "end_systole": nib.load(patient_dir / f"{patient}_frame{end_systole:02d}.nii.gz"),
-            "end_systole_label": nib.load(patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz"),
-        }
+        choice = np.random.choice(["end_diastole", "end_systole"])
 
-        for key, image in sample.items():
-            image = image.get_fdata(dtype=np.float32)
-            image = sample_slices(image, self.percentage_slices)
-            sample[key] = image
+        if choice == "end_diastole":
+            image = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz")
+            label = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}_gt.nii.gz")
+        else:
+            image = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}.nii.gz")
+            label = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz")
+
+        sample = {"image": image, "label": label}
+
+        for key, image_data in sample.items():
+            image_data = image_data.get_fdata(dtype=np.float32)
+            image_data = sample_slices(image_data, self.percentage_slices)
+            sample[key] = image_data
 
         if self.full_volume:
             original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
