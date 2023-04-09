@@ -4,6 +4,7 @@ from monai.transforms import (
     NormalizeIntensityd,
     RandAdjustContrastd,
     RandFlipd,
+    RandRotate90d,
     RandSpatialCropd,
     RandZoomd,
     SpatialPadd,
@@ -33,19 +34,16 @@ def get_transforms(
     ]
 
     if augment:
-        # Use trilinear interpolation for images and nearest neighbor for labels.
-        interpolation_keys = [InterpolateMode.TRILINEAR] * len(image_keys), [InterpolateMode.NEAREST] * len(label_keys)
+        # Use area interpolation for images and nearest neighbor for labels.
+        interpolation_keys = [InterpolateMode.AREA] * len(image_keys), [InterpolateMode.NEAREST_EXACT] * len(label_keys)
+        interpolation_mode = [key for nested_list in interpolation_keys for key in nested_list]  # flatten nested tuple
+
         train_transforms += [
             RandAdjustContrastd(keys=[*image_keys], gamma=(0.8, 1.2), prob=0.5),
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=0, prob=0.5),
             RandFlipd(keys=[*image_keys, *label_keys], spatial_axis=1, prob=0.5),
-            RandZoomd(
-                keys=[*image_keys, *label_keys],
-                min_zoom=0.85,
-                max_zoom=1.15,
-                mode=[key for nested_list in interpolation_keys for key in nested_list],  # flatten nested tuple
-                prob=0.5,
-            ),
+            RandZoomd(keys=[*image_keys, *label_keys], min_zoom=0.85, max_zoom=1.15, mode=interpolation_mode, prob=0.5),
+            RandRotate90d(keys=[*image_keys, *label_keys], spatial_axes=(0, 1), prob=0.5),
         ]
 
     train_transforms += [
