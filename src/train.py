@@ -133,11 +133,7 @@ def validate(
             val_inputs = torch.vstack((end_diastole, end_systole))
             val_labels = torch.vstack((end_diastole_labels, end_systole_labels))
             val_outputs = model(val_inputs)
-
-            val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
-            val_labels = val_labels.permute(0, 1, 3, 4, 2)
-
-            loss = loss_function(val_outputs, val_labels)
+            loss = loss_function(val_outputs.permute(0, 1, 3, 4, 2), val_labels.permute(0, 1, 3, 4, 2))
             validation_loss += loss.item()
 
             val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
