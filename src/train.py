@@ -32,7 +32,7 @@ def train(
         str, list[float] | list[list[float]]
     ] = {}  # For each metric, store a list of values one for each validation epoch
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", patience=5, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, verbose=True)
 
     for epoch in range(epochs):
         print("-" * 10)
@@ -92,7 +92,7 @@ def train(
                 f"at epoch: {best_metric_epoch}"
             )
 
-            scheduler.step(dice_metric)
+        scheduler.step(epoch_loss)
 
         if early_stopper and early_stopper.stop:
             print("Early stop")
