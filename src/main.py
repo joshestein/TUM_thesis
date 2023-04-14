@@ -66,14 +66,13 @@ def main():
     loss_function = DiceLoss(to_onehot_y=True, softmax=True)
     # TODO: weight decay check
     optimizer = torch.optim.Adam(model.parameters())
-
-    # Use the config learning rate as a midpoint.
     optimal_learning_rate = find_optimal_learning_rate(
         model=model,
         optimizer=optimizer,
         criterion=loss_function,
         device=device,
         train_loader=train_loader,
+        val_loader=val_loader,
         learning_rate=learning_rate,
         iterations=100,
     )
