@@ -35,8 +35,8 @@ def find_optimal_learning_rate(
     lr_finder = LearningRateFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(
         train_loader,
-        start_lr=int(learning_rate / 1000),
-        end_lr=int(learning_rate * 1000),
+        start_lr=learning_rate / 1000,
+        end_lr=learning_rate * 1000,
         num_iter=iterations,
         image_extractor=lambda x: x[image_key][..., 0] if model.dimensions == 2 else x[image_key],
         label_extractor=lambda x: x[label_key][..., 0] if model.dimensions == 2 else x[label_key],
