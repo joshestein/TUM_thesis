@@ -15,10 +15,10 @@ def get_train_dataloaders(
     test_size = total_training_number - train_size
 
     train_ds, val_ds = random_split(dataset, [train_size, test_size])
-    local_train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    local_val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-    return local_train_loader, local_val_loader
+    return train_loader, val_loader
 
 
 def find_optimal_learning_rate(
