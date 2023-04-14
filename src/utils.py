@@ -13,8 +13,7 @@ def find_optimal_learning_rate(
     criterion: torch.nn.Module,
     device: str | torch.device,
     train_loader: DataLoader,
-    start_lr: float,
-    end_lr: int,
+    learning_rate: float,
     iterations: int,
     image_key: str = "image",
     label_key: str = "label",
@@ -22,14 +21,21 @@ def find_optimal_learning_rate(
     lr_finder = LearningRateFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(
         train_loader,
-        start_lr=start_lr,
-        end_lr=end_lr,
+        start_lr=int(learning_rate / 1000),
+        end_lr=int(learning_rate * 1000),
         num_iter=iterations,
         image_extractor=lambda x: x[image_key][..., 0] if model.dimensions == 2 else x[image_key],
         label_extractor=lambda x: x[label_key][..., 0] if model.dimensions == 2 else x[label_key],
     )
-    steepest_lr, _ = lr_finder.get_steepest_gradient()
-    return steepest_lr
+    optimal_learning_rate, _ = lr_finder.get_steepest_gradient()
+
+    if optimal_learning_rate is None:
+        print(f"Optimal learning rate not found, using default learning rate {learning_rate}.")
+        optimal_learning_rate = learning_rate
+    else:
+        print(f"Optimal learning rate found: {optimal_learning_rate}")
+
+    return optimal_learning_rate
 
 
 def setup_dirs(root_dir=Path(os.getcwd())):
