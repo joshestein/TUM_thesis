@@ -31,10 +31,12 @@ def find_optimal_learning_rate(
     iterations: int,
     image_key: str = "image",
     label_key: str = "label",
+    val_loader: DataLoader | None = None,
 ):
     lr_finder = LearningRateFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(
-        train_loader,
+        train_loader=train_loader,
+        val_loader=val_loader,
         start_lr=learning_rate / 1000,
         end_lr=learning_rate * 1000,
         num_iter=iterations,
