@@ -4,7 +4,21 @@ from pathlib import Path
 import torch
 from monai.optimizers import LearningRateFinder
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
+
+
+def get_train_dataloaders(
+    dataset: torch.utils.data.Dataset, batch_size: int = 1, num_workers: int = 0, validation_split: float = 0.8
+):
+    total_training_number = len(dataset)
+    train_size = int(validation_split * total_training_number)
+    test_size = total_training_number - train_size
+
+    train_ds, val_ds = random_split(dataset, [train_size, test_size])
+    local_train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    local_val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+
+    return local_train_loader, local_val_loader
 
 
 def find_optimal_learning_rate(
