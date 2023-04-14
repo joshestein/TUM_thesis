@@ -52,7 +52,7 @@ def find_optimal_learning_rate(
     return optimal_learning_rate
 
 
-def setup_dirs(root_dir=Path(os.getcwd())):
+def setup_dirs(root_dir: Path):
     data_dir = root_dir / "data"
     log_dir = root_dir / "logs"
     out_dir = root_dir / "out"
