@@ -83,8 +83,6 @@ def main():
 
     config["hyperparameters"]["optimal_learning_rate"] = optimal_learning_rate
 
-    return
-
     wandb.init(project="acdc-3D-UNet-baseline-restart", config=config["hyperparameters"], reinit=True)
     wandb.config.dataset = "ACDC"
     wandb.config.architecture = "UNet"
