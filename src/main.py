@@ -104,7 +104,7 @@ def main():
             wandb.config.dataset = "ACDC"
             wandb.config.architecture = "UNet"
 
-            out_dir = root_out_dir / f"percentage_data_{percentage_slices}" / f"percentage_slices_{percentage_slices}"
+            out_dir = root_out_dir / f"percentage_data_{percentage_data}" / f"percentage_slices_{percentage_slices}"
             os.makedirs(out_dir, exist_ok=True)
 
             epoch_loss_values, metric_values = train(
