@@ -35,20 +35,15 @@ def visualize_loss_curves(
 
 def visualize_predictions(
     model: torch.nn.Module,
-    model_file: str | Path,
     val_loader: DataLoader,
     device: str | torch.device,
-    image_key: str = "end_diastole",
-    label_key: str = "end_diastole_label",
     slice_no: int = 0,
 ):
-    model.load_state_dict(torch.load(model_file))
-    model.to(device)
     model.eval()
 
     with torch.no_grad():
         for i, val_data in enumerate(val_loader):
-            image, label = val_data[image_key].to(device), val_data[label_key].to(device)
+            image, label = val_data["image"].to(device), val_data["label"].to(device)
 
             if model.dimensions == 2:
                 image = image[..., slice_no]
@@ -66,11 +61,11 @@ def visualize_slice(image: torch.Tensor, label: torch.Tensor, prediction: torch.
     label = label[0].squeeze()
     prediction = torch.argmax(prediction, dim=1)[0].squeeze().detach().cpu()
 
-    # 3D input will be H x W x D, where D is number of slices - take only the `slice_no` slice
+    # 3D input will be D X H x W, where D is number of slices - take only the `slice_no` slice
     if image.ndim == 3:
-        image = image[..., slice_no]
-        label = label[..., slice_no]
-        prediction = prediction[..., slice_no]
+        image = image[slice_no, ...]
+        label = label[slice_no, ...]
+        prediction = prediction[slice_no, ...]
 
     plt.figure("Check", (18, 6))
     plt.subplot(1, 3, 1)
