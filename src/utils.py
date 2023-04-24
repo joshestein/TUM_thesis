@@ -4,19 +4,30 @@ from pathlib import Path
 import torch
 from monai.optimizers import LearningRateFinder
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset
 
 
 def get_train_dataloaders(
-    dataset: torch.utils.data.Dataset, batch_size: int = 1, num_workers: int = 0, validation_split: float = 0.8
+    train_dataset: ACDCDataset,
+    val_dataset: ACDCDataset,
+    batch_size: int = 1,
+    num_workers: int = 0,
+    validation_split: float = 0.8,
+    shuffle=True,
 ):
-    total_training_number = len(dataset)
+    total_training_number = len(train_dataset)
     train_size = int(validation_split * total_training_number)
-    test_size = total_training_number - train_size
+    indices = np.arange(total_training_number)
 
-    train_ds, val_ds = random_split(dataset, [train_size, test_size])
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    if shuffle:
+        np.random.shuffle(indices)
+    train_indices, val_indices = indices[:train_size], indices[train_size:]
+
+    train_dataset = Subset(train_dataset, train_indices)
+    val_dataset = Subset(val_dataset, val_indices)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
     return train_loader, val_loader
 
