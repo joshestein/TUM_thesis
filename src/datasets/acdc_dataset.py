@@ -22,9 +22,6 @@ class ACDCDataset(Dataset):
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
         :param percentage_data: The fraction of the data to use
-        :param percentage_slices: The fraction of slices to extract from a given 3D volume. The slices are extracted
-            around the center of the volume. For example, if `percentage_slices=0.5`, then the slices will be from the
-            first quarter to third quarter of the volume.
         """
         self.data_dir = Path(data_dir)
         self.data_dir = self.data_dir / "training" if train else self.data_dir / "testing"
