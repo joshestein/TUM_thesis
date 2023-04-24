@@ -16,7 +16,7 @@ from src.metrics import METRICS
 from src.train import train
 from src.utils import find_optimal_learning_rate, get_train_dataloaders, setup_dirs
 from src.transforms.transforms import get_transforms
-from src.utils import get_train_dataloaders, setup_dirs
+from src.utils import get_datasets, get_train_dataloaders, setup_dirs
 
 
 def main():
@@ -66,12 +66,11 @@ def main():
         for percentage_slices in [0.8, 0.6, 0.4, 0.2, 0.1, 0.05]:
             config["hyperparameters"]["percentage_slices"] = percentage_slices
 
-            train_transforms = get_transforms(augment, percentage_slices=percentage_slices)
-            train_data = ACDCDataset(
-                data_dir=data_dir,
-                train=True,
-                transform=train_transforms,
+            train_data, val_data = get_datasets(
+                augment=augment,
                 percentage_data=percentage_data,
+                percentage_slices=percentage_slices,
+                data_dir=data_dir,
             )
 
             train_loader, val_loader = get_train_dataloaders(
