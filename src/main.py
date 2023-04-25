@@ -13,8 +13,7 @@ from monai.utils import set_determinism
 
 from src.metrics import METRICS
 from src.train import train
-from src.utils import find_optimal_learning_rate, get_train_dataloaders, setup_dirs
-from src.utils import get_datasets, get_train_dataloaders, setup_dirs
+from src.utils import find_optimal_learning_rate, get_datasets, get_train_dataloaders, setup_dirs
 
 
 def main():
