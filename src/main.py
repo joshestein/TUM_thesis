@@ -31,7 +31,7 @@ def main():
     batch_size = config["hyperparameters"].get("batch_size", 4)
     epochs = config["hyperparameters"].get("epochs", 100)
     learning_rate = config["hyperparameters"].get("learning_rate", 1e-5)
-    percentage_data = config["hyperparameters"].get("percentage_data", 1.0)
+    spatial_dimensions = config["hyperparameters"].get("spatial_dimensions", 3)
     validation_split = config["hyperparameters"].get("validation_split", 0.8)
 
     set_determinism(seed=config["hyperparameters"]["seed"])
@@ -79,7 +79,7 @@ def main():
             )
 
             model = UNet(
-                spatial_dims=3,
+                spatial_dims=spatial_dimensions,
                 in_channels=1,
                 out_channels=4,
                 # channels=(26, 52, 104, 208, 416),
@@ -93,7 +93,7 @@ def main():
             optimizer = torch.optim.Adam(model.parameters(), lr=optimal_learning_rate)
 
             wandb.init(
-                project="acdc-3D-UNet-baseline-restart",
+                project=f"acdc-{spatial_dimensions}D-UNet-baseline-restart",
                 config=config["hyperparameters"],
                 dir=log_dir,
                 tags=("limited_data", "limited_slices"),
