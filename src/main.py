@@ -67,7 +67,7 @@ def main():
                 augment=augment,
                 percentage_data=percentage_data,
                 percentage_slices=percentage_slices,
-                data_dir=data_dir,
+                data_dir=data_dir / "training",
             )
 
             train_loader, val_loader = get_train_dataloaders(

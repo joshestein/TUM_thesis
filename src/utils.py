@@ -16,13 +16,11 @@ def get_datasets(augment: bool, percentage_data: float, percentage_slices: float
 
     train_data = ACDCDataset(
         data_dir=data_dir,
-        train=True,
         transform=train_transforms,
         percentage_data=percentage_data,
     )
     val_data = ACDCDataset(
         data_dir=data_dir,
-        train=True,
         transform=val_transforms,
         percentage_data=percentage_data,
     )
@@ -44,6 +42,7 @@ def get_train_dataloaders(
 
     if shuffle:
         np.random.shuffle(indices)
+
     train_indices, val_indices = indices[:train_size], indices[train_size:]
 
     train_dataset = Subset(train_dataset, train_indices)

@@ -18,13 +18,11 @@ class ACDCDataset(Dataset):
     ):
         """
         :param data_dir: Root data dir, in which "training" and "testing" folders are expected
-        :param train: Flag used to read train/test data. If `True`, reads training data, otherwise reads testing data.
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
         :param percentage_data: The fraction of the data to use
         """
         self.data_dir = Path(data_dir)
-        self.data_dir = self.data_dir / "training" if train else self.data_dir / "testing"
         self.patients = sorted([f.path for f in os.scandir(self.data_dir) if f.is_dir()])
         self.patients = self.patients[: int(len(self.patients) * percentage_data)]
         self.transform = transform
