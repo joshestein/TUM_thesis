@@ -1,4 +1,5 @@
 import os
+from statistics import mean
 from typing import Optional
 
 import torch
@@ -22,6 +23,7 @@ def train(
     metrics: dict[str, CumulativeIterationMetric],
     device: str | torch.device,
     out_dir: str | os.PathLike,
+    dimensions: int,
     early_stopper: Optional[EarlyStopper] = None,
 ):
     best_metric = -1
@@ -43,21 +45,17 @@ def train(
         for batch_data in train_loader:
             step += 1
 
-            inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
+            loss = get_epoch_loss(
+                optimizer=optimizer,
+                batch_data=batch_data,
+                model=model,
+                loss_function=loss_function,
+                device=device,
+                dimensions=dimensions,
+            )
 
-            optimizer.zero_grad()
-            outputs = model(inputs)
-
-            # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
-            # This is because most 3D layers in Pytorch expect D before H, W
-            # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D
-            # We permute after passing through the model.
-            loss = loss_function(outputs.permute(0, 1, 3, 4, 2), labels.permute(0, 1, 3, 4, 2))
-            loss.backward()
-            optimizer.step()
-
-            epoch_loss += loss.item()
-            print(f"{step}/{len(train_loader.dataset) // train_loader.batch_size}, " f"train_loss: {loss.item():.4f}")
+            epoch_loss += loss
+            print(f"{step}/{len(train_loader.dataset) // train_loader.batch_size}, " f"train_loss: {loss:.4f}")
 
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
@@ -72,6 +70,7 @@ def train(
                 loss_function=loss_function,
                 metrics=metrics,
                 metric_values=metric_values,
+                dimensions=dimensions,
             )
 
             dice_metric = metric_values["dice_with_background"][-1]
@@ -108,6 +107,7 @@ def validate(
     loss_function: torch.nn.Module,
     metrics: dict[str, CumulativeIterationMetric],
     metric_values,
+    dimensions: int,
 ):
     post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
@@ -119,18 +119,16 @@ def validate(
         for val_data in val_loader:
             step += 1
 
-            val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-
-            val_outputs = model(val_inputs)
-            loss = loss_function(val_outputs.permute(0, 1, 3, 4, 2), val_labels.permute(0, 1, 3, 4, 2))
-            validation_loss += loss.item()
-
-            val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
-            val_labels = [post_label(i) for i in decollate_batch(val_labels)]
-
-            for metric in metrics.values():
-                # compute metrics for current iteration
-                metric(y_pred=val_outputs, y=val_labels)
+            validation_loss += get_validation_loss(
+                val_data=val_data,
+                model=model,
+                loss_function=loss_function,
+                device=device,
+                post_pred=post_pred,
+                post_label=post_label,
+                metrics=metrics,
+                dimensions=dimensions,
+            )
 
         validation_loss /= step
         wandb.log({"validation_loss": validation_loss})
@@ -147,3 +145,80 @@ def validate(
 
             metric_values[name].append(metric_value)
             wandb.log({f"validation_{name}": metric_value})
+
+
+def get_epoch_loss(
+    optimizer: torch.optim.Optimizer,
+    batch_data: torch.tensor,
+    model: torch.nn.Module,
+    loss_function,
+    device: str | torch.device,
+    dimensions: int = 3,
+):
+    inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
+    losses = []
+
+    if dimensions == 2:
+        inputs = inputs.permute(0, 1, 3, 4, 2)
+        labels = labels.permute(0, 1, 3, 4, 2)
+        for slice_index in range(inputs.shape[-1]):
+            optimizer.zero_grad()
+            outputs = model(inputs[..., slice_index])
+            slice_loss = loss_function(outputs, labels[..., slice_index])
+            losses.append(slice_loss.item())
+            slice_loss.backward()
+            optimizer.step()
+    else:
+        optimizer.zero_grad()
+        outputs = model(inputs)
+
+        # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
+        # This is because most 3D layers in Pytorch expect D before H, W
+        # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D
+        # We permute after passing through the model.
+        loss = loss_function(outputs.permute(0, 1, 3, 4, 2), labels.permute(0, 1, 3, 4, 2))
+        losses.append(loss.item())
+        loss.backward()
+        optimizer.step()
+
+    return mean(losses)
+
+
+def get_validation_loss(
+    val_data: torch.tensor,
+    model: torch.nn.Module,
+    loss_function,
+    device: str | torch.device,
+    post_pred: Compose,
+    post_label: Compose,
+    metrics: dict[str, CumulativeIterationMetric],
+    dimensions: int = 3,
+):
+    val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
+    val_losses = []
+
+    if dimensions == 2:
+        val_inputs = val_inputs.permute(0, 1, 3, 4, 2)
+        val_labels = val_labels.permute(0, 1, 3, 4, 2)
+        for slice_index in range(val_inputs.shape[-1]):
+            val_outputs = model(val_inputs[..., slice_index])
+            val_loss = loss_function(val_outputs, val_labels[..., slice_index])
+            val_losses.append(val_loss.item())
+
+        # Metrics are assessed on the last output/label respectively.
+        val_labels = val_labels[..., val_inputs.shape[-1] - 1]
+    else:
+        val_outputs = model(val_inputs)
+
+        val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
+        val_labels = val_labels.permute(0, 1, 3, 4, 2)
+        val_loss = loss_function(val_outputs, val_labels)
+        val_losses.append(val_loss.item())
+
+    val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
+    val_labels = [post_label(i) for i in decollate_batch(val_labels)]
+
+    for metric in metrics.values():
+        metric(y_pred=val_outputs, y=val_labels)
+
+    return mean(val_losses)
