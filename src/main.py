@@ -120,6 +120,7 @@ def main():
                 metrics=METRICS,
                 device=device,
                 out_dir=out_dir,
+                dimensions=spatial_dimensions,
             )
 
             wandb.finish()
