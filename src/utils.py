@@ -12,8 +12,7 @@ from src.transforms.transforms import get_transforms
 
 
 def get_datasets(augment: bool, percentage_data: float, percentage_slices: float, data_dir: Path):
-    train_transforms = get_transforms(augment, percentage_slices=percentage_slices)
-    val_transforms = get_transforms(False, percentage_slices=percentage_slices)
+    train_transforms, val_transforms = get_transforms(augment, percentage_slices=percentage_slices)
 
     train_data = ACDCDataset(
         data_dir=data_dir,

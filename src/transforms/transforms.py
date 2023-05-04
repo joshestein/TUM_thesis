@@ -16,7 +16,7 @@ from monai.utils import InterpolateMode
 from src.transforms.remove_slices import RemoveSlicesd
 
 
-def get_transforms(augment: bool = True, percentage_slices: float = 0.0) -> Compose:
+def get_transforms(augment: bool = True, percentage_slices: float = 0.0) -> (Compose, Compose):
     # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
 
     keys = ["image", "label"]
@@ -54,4 +54,11 @@ def get_transforms(augment: bool = True, percentage_slices: float = 0.0) -> Comp
         ToTensord(keys=keys),
     ]
 
-    return Compose(train_transforms)
+    val_transforms = [
+        EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
+        SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="reflect"),
+        Transposed(keys=keys, indices=(0, 3, 1, 2)),
+        ToTensord(keys=keys),
+    ]
+
+    return Compose(train_transforms), Compose(val_transforms)
