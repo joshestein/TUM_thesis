@@ -7,6 +7,7 @@ from monai.transforms import (
     RandRotate90d,
     RandSpatialCropd,
     RandZoomd,
+    ResizeWithPadOrCropd,
     SpatialPadd,
     ToTensord,
     Transposed,
@@ -56,7 +57,7 @@ def get_transforms(augment: bool = True, percentage_slices: float = 0.0) -> (Com
 
     val_transforms = [
         EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
-        SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="reflect"),
+        ResizeWithPadOrCropd(keys=keys, spatial_size=(224, 224, 16), mode="reflect"),
         Transposed(keys=keys, indices=(0, 3, 1, 2)),
         ToTensord(keys=keys),
     ]
