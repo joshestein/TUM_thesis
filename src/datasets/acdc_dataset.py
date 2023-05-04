@@ -23,7 +23,7 @@ class ACDCDataset(Dataset):
         :param percentage_data: The fraction of the data to use
         """
         self.data_dir = Path(data_dir)
-        self.patients = sorted([f.path for f in os.scandir(self.data_dir) if f.is_dir()])
+        self.patients = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
         self.patients = self.patients[: int(len(self.patients) * percentage_data)]
         self.transform = transform
         self.full_volume = full_volume
@@ -31,8 +31,8 @@ class ACDCDataset(Dataset):
     def __len__(self):
         return len(self.patients)
 
-    def __getitem__(self, idx):
-        patient_dir = Path(self.patients[idx])
+    def __getitem__(self, index):
+        patient_dir = self.patients[index]
         patient = patient_dir.name
 
         config = np.loadtxt(patient_dir / "Info.cfg", dtype=str, delimiter=":")
