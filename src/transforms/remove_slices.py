@@ -38,7 +38,7 @@ class RemoveSlicesd(MapTransform):
             return d
 
         value = next(iter(d.values()))
-        indexes = self._get_indexes(value)
+        indexes = self._get_indexes_to_remove(value)
 
         for key in self.key_iterator(d):
             if self.maintain_shape:
@@ -48,7 +48,7 @@ class RemoveSlicesd(MapTransform):
 
         return d
 
-    def _get_indexes(self, data: torch.Tensor):
+    def _get_indexes_to_remove(self, data: torch.Tensor):
         slices = data.shape[-1]
         # We subtract from one to ensure this is the amount we keep.
         # For example, if 0.8, we want to keep 80% of the data, so we get indexes corresponding to the other 20%.
