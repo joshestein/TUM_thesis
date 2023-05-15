@@ -190,8 +190,9 @@ def get_validation_loss(
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
         for slice_index in range(val_inputs.shape[-1]):
             val_outputs = model(val_inputs[..., slice_index])
-            val_labels = val_labels[..., slice_index]
-            val_loss = compute_val_loss_and_metrics(inputs=val_outputs, labels=val_labels, loss_function=loss_function)
+            val_loss = compute_val_loss_and_metrics(
+                inputs=val_outputs, labels=val_labels[..., slice_index], loss_function=loss_function
+            )
             val_losses.append(val_loss)
     else:
         val_outputs = model(val_inputs)
