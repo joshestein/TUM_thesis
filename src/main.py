@@ -11,7 +11,6 @@ from monai.networks.layers import Norm
 from monai.networks.nets import UNet
 from monai.utils import set_determinism
 
-from src.metrics import METRICS
 from src.train import train
 from src.utils import find_optimal_learning_rate, get_datasets, get_train_dataloaders, setup_dirs
 
@@ -117,7 +116,6 @@ def main():
                 optimizer=optimizer,
                 val_interval=val_interval,
                 epochs=epochs,
-                metrics=METRICS,
                 device=device,
                 out_dir=out_dir,
                 dimensions=spatial_dimensions,

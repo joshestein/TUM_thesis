@@ -5,10 +5,10 @@ from typing import Optional
 import torch
 import wandb
 from monai.data import decollate_batch
-from monai.metrics import CumulativeIterationMetric
 from monai.transforms import AsDiscrete, Compose
 from torch.utils.data import DataLoader
 
+from src.metrics import METRICS
 from src.models.early_stopper import EarlyStopper
 
 
@@ -20,7 +20,6 @@ def train(
     optimizer: torch.optim.Optimizer,
     val_interval: int,
     epochs: int,
-    metrics: dict[str, CumulativeIterationMetric],
     device: str | torch.device,
     out_dir: str | os.PathLike,
     dimensions: int,
@@ -68,7 +67,6 @@ def train(
                 val_loader=val_loader,
                 device=device,
                 loss_function=loss_function,
-                metrics=metrics,
                 metric_values=metric_values,
                 dimensions=dimensions,
             )
@@ -105,13 +103,9 @@ def validate(
     val_loader: DataLoader,
     device: str | torch.device,
     loss_function: torch.nn.Module,
-    metrics: dict[str, CumulativeIterationMetric],
     metric_values,
     dimensions: int,
 ):
-    post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
-    post_label = Compose([AsDiscrete(to_onehot=4)])
-
     model.eval()
     with torch.no_grad():
         validation_loss = 0
@@ -124,9 +118,6 @@ def validate(
                 model=model,
                 loss_function=loss_function,
                 device=device,
-                post_pred=post_pred,
-                post_label=post_label,
-                metrics=metrics,
                 dimensions=dimensions,
             )
 
@@ -134,7 +125,7 @@ def validate(
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
 
-        for name, metric in metrics.items():
+        for name, metric in METRICS.items():
             # aggregate and reset metrics
             metric_value = metric.aggregate()
             metric_value = metric_value.item() if len(metric_value) == 1 else metric_value.tolist()
@@ -189,9 +180,6 @@ def get_validation_loss(
     model: torch.nn.Module,
     loss_function,
     device: str | torch.device,
-    post_pred: Compose,
-    post_label: Compose,
-    metrics: dict[str, CumulativeIterationMetric],
     dimensions: int = 3,
 ):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
