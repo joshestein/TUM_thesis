@@ -17,7 +17,7 @@ from monai.utils import InterpolateMode
 from src.transforms.remove_slices import RemoveSlicesd
 
 
-def get_transforms(augment: bool = True, percentage_slices: float = 0.0) -> (Compose, Compose):
+def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Compose, Compose):
     # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
 
     keys = ["image", "label"]
