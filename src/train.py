@@ -202,23 +202,29 @@ def get_validation_loss(
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
         for slice_index in range(val_inputs.shape[-1]):
             val_outputs = model(val_inputs[..., slice_index])
-            val_loss = loss_function(val_outputs, val_labels[..., slice_index])
-            val_losses.append(val_loss.item())
-
-        # Metrics are assessed on the last output/label respectively.
-        val_labels = val_labels[..., val_inputs.shape[-1] - 1]
+            val_labels = val_labels[..., slice_index]
+            val_loss = compute_val_loss_and_metrics(inputs=val_outputs, labels=val_labels, loss_function=loss_function)
+            val_losses.append(val_loss)
     else:
         val_outputs = model(val_inputs)
 
         val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
-        val_loss = loss_function(val_outputs, val_labels)
-        val_losses.append(val_loss.item())
-
-    val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
-    val_labels = [post_label(i) for i in decollate_batch(val_labels)]
-
-    for metric in metrics.values():
-        metric(y_pred=val_outputs, y=val_labels)
+        val_loss = compute_val_loss_and_metrics(inputs=val_outputs, labels=val_labels, loss_function=loss_function)
+        val_losses.append(val_loss)
 
     return mean(val_losses)
+
+
+def compute_val_loss_and_metrics(inputs, labels, loss_function):
+    post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
+    post_label = Compose([AsDiscrete(to_onehot=4)])
+
+    val_loss = loss_function(inputs, labels)
+    val_outputs = [post_pred(i) for i in decollate_batch(inputs)]
+    val_labels = [post_label(i) for i in decollate_batch(labels)]
+
+    for metric in METRICS.values():
+        metric(y_pred=val_outputs, y=val_labels)
+
+    return val_loss.item()
