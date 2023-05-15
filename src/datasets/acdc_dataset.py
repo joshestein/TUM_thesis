@@ -11,7 +11,6 @@ class ACDCDataset(Dataset):
     def __init__(
         self,
         data_dir: str | Path,
-        train: bool = True,
         transform: monai.transforms.Compose = None,
         full_volume: bool = False,
         percentage_data: float = 1.0,
