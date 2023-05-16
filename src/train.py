@@ -16,7 +16,7 @@ def train(
     model: torch.nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    loss_function,
+    loss_function: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     val_interval: int,
     epochs: int,
@@ -142,7 +142,7 @@ def get_epoch_loss(
     optimizer: torch.optim.Optimizer,
     batch_data: torch.tensor,
     model: torch.nn.Module,
-    loss_function,
+    loss_function: torch.nn.Module,
     device: str | torch.device,
     dimensions: int = 3,
 ):
@@ -178,7 +178,7 @@ def get_epoch_loss(
 def get_validation_loss(
     val_data: torch.tensor,
     model: torch.nn.Module,
-    loss_function,
+    loss_function: torch.nn.Module,
     device: str | torch.device,
     dimensions: int = 3,
 ):
