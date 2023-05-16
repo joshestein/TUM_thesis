@@ -164,8 +164,8 @@ def get_epoch_loss(
         outputs = model(inputs)
 
         # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
-        # This is because most 3D layers in Pytorch expect D before H, W
-        # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D
+        # This is because 3D layers in Pytorch expect D before H, W
+        # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D (put depth at the last dimension).
         # We permute after passing through the model.
         loss = loss_function(outputs.permute(0, 1, 3, 4, 2), labels.permute(0, 1, 3, 4, 2))
         losses.append(loss.item())
