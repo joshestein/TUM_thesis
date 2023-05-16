@@ -38,7 +38,6 @@ def train(
     for epoch in range(epochs):
         print("-" * 10)
         print(f"epoch {epoch + 1}/{epochs}")
-        model.train()
         epoch_loss = 0
         step = 0
         for batch_data in train_loader:
@@ -149,6 +148,7 @@ def get_epoch_loss(
     inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
     losses = []
 
+    model.train()
     if dimensions == 2:
         inputs = inputs.permute(0, 1, 3, 4, 2)
         labels = labels.permute(0, 1, 3, 4, 2)
