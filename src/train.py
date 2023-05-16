@@ -191,26 +191,26 @@ def get_validation_loss(
         for slice_index in range(val_inputs.shape[-1]):
             val_outputs = model(val_inputs[..., slice_index])
             val_loss = compute_val_loss_and_metrics(
-                inputs=val_outputs, labels=val_labels[..., slice_index], loss_function=loss_function
+                outputs=val_outputs, labels=val_labels[..., slice_index], loss_function=loss_function
             )
             val_losses.append(val_loss)
     else:
         val_outputs = model(val_inputs)
-
+        # Permute after passing through the model.
         val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
-        val_loss = compute_val_loss_and_metrics(inputs=val_outputs, labels=val_labels, loss_function=loss_function)
+        val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
         val_losses.append(val_loss)
 
     return mean(val_losses)
 
 
-def compute_val_loss_and_metrics(inputs, labels, loss_function):
+def compute_val_loss_and_metrics(outputs, labels, loss_function):
     post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
 
-    val_loss = loss_function(inputs, labels)
-    val_outputs = [post_pred(i) for i in decollate_batch(inputs)]
+    val_loss = loss_function(outputs, labels)
+    val_outputs = [post_pred(i) for i in decollate_batch(outputs)]
     val_labels = [post_label(i) for i in decollate_batch(labels)]
 
     for metric in METRICS.values():
