@@ -39,9 +39,9 @@ def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Com
                 max_zoom=1.15,
                 # Use area interpolation for images and nearest neighbor for labels.
                 mode=(InterpolateMode.AREA, InterpolateMode.NEAREST_EXACT),
-                prob=0.5,
+                prob=0.25,
             ),
-            RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.5),
+            RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.25),
         ]
 
     train_transforms += [
