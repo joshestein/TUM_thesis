@@ -48,7 +48,7 @@ def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Com
         RemoveSlicesd(keys=keys, percentage_slices=percentage_slices),
         # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
-        SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="edge"),
+        SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="constant"),
         RandSpatialCropd(keys=keys, roi_size=(224, 224, 16), random_size=False),
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
         Transposed(keys=keys, indices=(0, 3, 1, 2)),
@@ -57,7 +57,7 @@ def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Com
 
     val_transforms = [
         EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
-        ResizeWithPadOrCropd(keys=keys, spatial_size=(224, 224, 16), mode="edge"),
+        ResizeWithPadOrCropd(keys=keys, spatial_size=(224, 224, 16), mode="constant"),
         Transposed(keys=keys, indices=(0, 3, 1, 2)),
         ToTensord(keys=keys),
     ]
