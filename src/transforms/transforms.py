@@ -17,7 +17,9 @@ from monai.utils import InterpolateMode
 from src.transforms.remove_slices import RemoveSlicesd
 
 
-def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Compose, Compose):
+def get_transforms(
+    augment: bool = True, percentage_slices: float = 1.0, sample_areas=("apex", "base", "mid")
+) -> (Compose, Compose):
     # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
 
     keys = ["image", "label"]
@@ -45,7 +47,7 @@ def get_transforms(augment: bool = True, percentage_slices: float = 1.0) -> (Com
         ]
 
     train_transforms += [
-        RemoveSlicesd(keys=keys, percentage_slices=percentage_slices),
+        RemoveSlicesd(keys=keys, percentage_slices=percentage_slices, sample_areas=sample_areas),
         # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
         # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
         SpatialPadd(keys=keys, spatial_size=(224, 224, 16), mode="constant"),
