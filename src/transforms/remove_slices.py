@@ -7,7 +7,8 @@ from monai.transforms import MapTransform
 
 
 class RemoveSlicesd(MapTransform):
-    """Remove slices from the data. Expects the number of slices to be the last dimension of the data.
+    """Remove slices from the data. Expects the number of slices to be the last dimension of the data. This transform
+    should always be called before any padding functions.
 
     :param keys: Keys to remove slices from.
     :param percentage_slices: Percentage of slices to keep from the data.
@@ -58,14 +59,15 @@ class RemoveSlicesd(MapTransform):
 
     def _get_indexes_to_remove(self, data: torch.Tensor):
         slices = data.shape[-1]
+
+        # Since slice removal is called before padding, we do not need to check for constant zeros surrounding the
+        # slices.
         area_slices = {
             "base": range(0, int(math.ceil(slices / 3))),
             "mid": range(int(math.ceil(slices / 3)), int(math.ceil(2 * slices / 3))),
             "apex": range(int(math.ceil(2 * slices / 3)), slices),
         }
 
-        # TODO: should we ignore first and last n slices if they are filled with constant zeros? After we remove slices,
-        # will always pad again with zeros to ensure divisibility by 16.
         indexes_to_sample_from = sorted([index for area in self.sample_areas for index in area_slices[area]])
         slices = len(indexes_to_sample_from)
         # We subtract from one to ensure this is the amount we keep.
