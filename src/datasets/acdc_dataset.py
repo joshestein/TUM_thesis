@@ -38,14 +38,9 @@ class ACDCDataset(Dataset):
         end_diastole = int(config[0, 1])
         end_systole = int(config[1, 1])
 
-        randomized_phase = np.random.choice(["end_diastole", "end_systole"])
-
-        if randomized_phase == "end_diastole":
-            image = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}.nii.gz")
-            label = nib.load(patient_dir / f"{patient}_frame{end_diastole:02d}_gt.nii.gz")
-        else:
-            image = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}.nii.gz")
-            label = nib.load(patient_dir / f"{patient}_frame{end_systole:02d}_gt.nii.gz")
+        randomised_phase = np.random.choice([end_diastole, end_systole])
+        image = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}.nii.gz")
+        label = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}_gt.nii.gz")
 
         sample = {"image": image.get_fdata(dtype=np.float32), "label": label.get_fdata(dtype=np.float32)}
 
