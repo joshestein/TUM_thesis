@@ -15,7 +15,7 @@ class RemoveSlicesd(MapTransform):
     :param random_slices: Whether to remove random slices or slices from the center of the volume. Defaults to `True`.
     :param maintain_shape: Whether to maintain the shape of the data. If `True`, the removed slices will be filled with
             zeros. Defaults to `True`.
-    :param sample_areas: Which area(s) of the heart to sample from. Can be one or more of 'apex', 'mid', 'base'.
+    :param sample_regions: Which region(s) of the heart to sample from. Can be one or more of 'apex', 'mid', 'base'.
         Defaults to ('apex', 'mid', 'base').
     :param allow_missing_keys: Allow missing keys. If `False`, an exception will be raised if a key is missing. Defaults
             to `True`.
@@ -27,7 +27,7 @@ class RemoveSlicesd(MapTransform):
         percentage_slices: float,
         random_slices=True,
         maintain_shape=True,
-        sample_areas: list[str] = ("apex", "mid", "base"),
+        sample_regions: list[str] = ("apex", "mid", "base"),
         allow_missing_keys=True,
     ):
         super().__init__(keys, allow_missing_keys=allow_missing_keys)
@@ -36,48 +36,63 @@ class RemoveSlicesd(MapTransform):
         self.random_slices = random_slices
         self.maintain_shape = maintain_shape
 
-        for area in sample_areas:
-            assert area in ("apex", "mid", "base"), f"Invalid area {area}. Must be one of 'apex', 'mid', 'base'."
-        self.sample_areas = sample_areas
+        for region in sample_regions:
+            assert region in ("apex", "mid", "base"), f"Invalid region {region}. Must be one of 'apex', 'mid', 'base'."
+        self.sample_regions = sample_regions
 
     def __call__(self, data: Mapping[Hashable, torch.Tensor]) -> dict[Hashable, torch.Tensor]:
         d = dict(data)
 
-        if self.percentage_slices == 1.0:
+        if self.percentage_slices == 1.0 and len(self.sample_regions) == 3:
             return d
 
         value = next(iter(d.values()))
-        indexes = self._get_indexes_to_remove(value)
+        mask = self._get_mask(value)
 
         for key in self.key_iterator(d):
             if self.maintain_shape:
-                d[key][..., indexes] = 0.0
+                # Zero out everything except the mask
+                d[key][..., ~mask] = 0.0
             else:
-                d[key] = d[key][..., indexes]
+                # Keep only the data in the mask
+                d[key] = d[key][..., mask]
 
         return d
 
-    def _get_indexes_to_remove(self, data: torch.Tensor):
+    def _get_mask(self, data: torch.Tensor):
         slices = data.shape[-1]
+        slices_per_region = slices / 3  # We divide the entire volume into 3 regions: base, mid, apex
+        num_sample_slices = int(slices * self.percentage_slices)
 
-        # Since slice removal is called before padding, we do not need to check for constant zeros surrounding the
-        # slices.
-        area_slices = {
-            "base": range(0, int(math.ceil(slices / 3))),
-            "mid": range(int(math.ceil(slices / 3)), int(math.ceil(2 * slices / 3))),
-            "apex": range(int(math.ceil(2 * slices / 3)), slices),
+        region_slices = {
+            "base": range(0, int(math.ceil(slices_per_region))),
+            "mid": range(int(math.ceil(slices_per_region)), int(math.ceil(2 * slices_per_region))),
+            "apex": range(int(math.ceil(2 * slices_per_region)), slices),
         }
 
-        indexes_to_sample_from = sorted([index for area in self.sample_areas for index in area_slices[area]])
-        slices = len(indexes_to_sample_from)
-        # We subtract from one to ensure this is the amount we keep.
-        # For example, if 0.8, we want to keep 80% of the data, so we get indexes corresponding to the other 20%.
-        num_slices = int(slices * (1 - self.percentage_slices))
-
         if self.random_slices:
-            indexes = torch.randperm(slices)[:num_slices]
-            return indexes
+            indices_to_sample = [index for region in self.sample_regions for index in region_slices[region]]
+            if len(indices_to_sample) < num_sample_slices:
+                print("Warning: Not enough slices to sample from. Using all slices in the sample regions.")
+                indices = indices_to_sample
+            else:
+                indices = torch.randperm(len(indices_to_sample))[:num_sample_slices]
+        else:
+            samples_per_region = int(num_sample_slices / len(self.sample_regions))
+            indices = []
+            for region in self.sample_regions:
+                start = region_slices[region][0]
+                end = region_slices[region][-1]
 
-        start_slice = slices // 2 - num_slices // 2
-        end_slice = start_slice + num_slices
-        return torch.arange(start_slice, end_slice)
+                if end - start < samples_per_region:
+                    print(f"Warning: Too few slices in region {region} - using all slices.")
+                    indices.extend(region_slices[region])
+                else:
+                    mid = int((start + end) / 2)
+                    start = mid - int(samples_per_region / 2)
+                    end = mid + int(samples_per_region / 2)
+                    indices.extend(range(start, end))
+
+        mask = torch.zeros(slices, dtype=torch.bool)
+        mask[indices] = True
+        return mask
