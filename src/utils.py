@@ -12,10 +12,18 @@ from src.transforms.transforms import get_transforms
 
 
 def get_datasets(
-    augment: bool, percentage_data: float, percentage_slices: float, sample_areas: list[str], data_dir: Path
+    spatial_dims: int,
+    percentage_data: float,
+    data_dir: Path,
+    percentage_slices: float = 1.0,
+    augment: bool = True,
+    sample_regions: list[str] = ("apex", "mid", "base"),
 ):
     train_transforms, val_transforms = get_transforms(
-        augment, percentage_slices=percentage_slices, sample_areas=sample_areas
+        spatial_dims=spatial_dims,
+        augment=augment,
+        percentage_slices=percentage_slices,
+        sample_regions=sample_regions,
     )
 
     train_data = ACDCDataset(
