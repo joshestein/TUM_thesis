@@ -1,5 +1,4 @@
 import os
-from statistics import mean
 from typing import Optional
 
 import torch
@@ -22,7 +21,6 @@ def train(
     epochs: int,
     device: str | torch.device,
     out_dir: str | os.PathLike,
-    dimensions: int,
     early_stopper: Optional[EarlyStopper] = None,
 ):
     best_metric = -1
@@ -49,7 +47,6 @@ def train(
                 model=model,
                 loss_function=loss_function,
                 device=device,
-                dimensions=dimensions,
             )
 
             epoch_loss += loss
@@ -67,7 +64,6 @@ def train(
                 device=device,
                 loss_function=loss_function,
                 metric_values=metric_values,
-                dimensions=dimensions,
             )
 
             dice_metric = metric_values["dice_with_background"][-1]
@@ -103,7 +99,6 @@ def validate(
     device: str | torch.device,
     loss_function: torch.nn.Module,
     metric_values,
-    dimensions: int,
 ):
     model.eval()
     with torch.no_grad():
@@ -113,11 +108,7 @@ def validate(
             step += 1
 
             validation_loss += get_validation_loss(
-                val_data=val_data,
-                model=model,
-                loss_function=loss_function,
-                device=device,
-                dimensions=dimensions,
+                val_data=val_data, model=model, loss_function=loss_function, device=device
             )
 
         validation_loss /= step
@@ -143,36 +134,27 @@ def get_epoch_loss(
     model: torch.nn.Module,
     loss_function: torch.nn.Module,
     device: str | torch.device,
-    dimensions: int = 3,
 ):
     inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
-    losses = []
 
     model.train()
-    if dimensions == 2:
-        inputs = inputs.permute(0, 1, 3, 4, 2)
-        labels = labels.permute(0, 1, 3, 4, 2)
-        for slice_index in range(inputs.shape[-1]):
-            optimizer.zero_grad()
-            outputs = model(inputs[..., slice_index])
-            slice_loss = loss_function(outputs, labels[..., slice_index])
-            losses.append(slice_loss.item())
-            slice_loss.backward()
-            optimizer.step()
-    else:
-        optimizer.zero_grad()
-        outputs = model(inputs)
+    optimizer.zero_grad()
+    outputs = model(inputs)
 
+    if len(inputs.shape) == 5:
         # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
         # This is because 3D layers in Pytorch expect D before H, W
         # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D (put depth at the last dimension).
         # We permute after passing through the model.
-        loss = loss_function(outputs.permute(0, 1, 3, 4, 2), labels.permute(0, 1, 3, 4, 2))
-        losses.append(loss.item())
-        loss.backward()
-        optimizer.step()
+        outputs = outputs.permute(0, 1, 3, 4, 2)
+        labels = labels.permute(0, 1, 3, 4, 2)
 
-    return mean(losses)
+    loss = loss_function(outputs, labels)
+
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
 
 
 def get_validation_loss(
@@ -180,29 +162,17 @@ def get_validation_loss(
     model: torch.nn.Module,
     loss_function: torch.nn.Module,
     device: str | torch.device,
-    dimensions: int = 3,
 ):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-    val_losses = []
+    val_outputs = model(val_inputs)
 
-    if dimensions == 2:
-        val_inputs = val_inputs.permute(0, 1, 3, 4, 2)
-        val_labels = val_labels.permute(0, 1, 3, 4, 2)
-        for slice_index in range(val_inputs.shape[-1]):
-            val_outputs = model(val_inputs[..., slice_index])
-            val_loss = compute_val_loss_and_metrics(
-                outputs=val_outputs, labels=val_labels[..., slice_index], loss_function=loss_function
-            )
-            val_losses.append(val_loss)
-    else:
-        val_outputs = model(val_inputs)
+    if len(val_inputs.shape) == 5:
         # Permute after passing through the model.
         val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
-        val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
-        val_losses.append(val_loss)
 
-    return mean(val_losses)
+    val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
+    return val_loss.item()
 
 
 def compute_val_loss_and_metrics(outputs, labels, loss_function):
@@ -216,4 +186,4 @@ def compute_val_loss_and_metrics(outputs, labels, loss_function):
     for metric in METRICS.values():
         metric(y_pred=val_outputs, y=val_labels)
 
-    return val_loss.item()
+    return val_loss
