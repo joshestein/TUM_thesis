@@ -28,17 +28,9 @@ def get_transforms(
 
     keys = ["image", "label"]
 
-    train_transforms = [
-        EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
-        NormalizeIntensityd(keys=["image"], channel_wise=False),
-        # NormalizeIntensityd(keys=["image"], channel_wise=True),
-        # Spacingd(keys=keys, pixdim=(1.25, 1.25, -1.0), mode=("nearest", "nearest")),
-    ]
-
-    val_transforms = [
-        EnsureChannelFirstd(keys=keys, channel_dim="no_channel"),
-        NormalizeIntensityd(keys=["image"], channel_wise=False),
-    ]
+    # Spacingd(keys=keys, pixdim=(1.25, 1.25, -1.0), mode=("nearest", "nearest")),
+    train_transforms = [EnsureChannelFirstd(keys=keys, channel_dim="no_channel")]
+    val_transforms = [EnsureChannelFirstd(keys=keys, channel_dim="no_channel")]
 
     if spatial_dims == 3:
         spatial_size = (224, 224, 16)
@@ -65,6 +57,7 @@ def get_transforms(
             RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.25),
         ]
 
+    # Pad to fixed size
     train_transforms += [
         RemoveSlicesd(
             keys=keys,
@@ -75,6 +68,7 @@ def get_transforms(
         # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
         SpatialPadd(keys=keys, spatial_size=spatial_size, mode="constant"),
         RandSpatialCropd(keys=keys, roi_size=spatial_size, random_size=False),
+        NormalizeIntensityd(keys=["image"], channel_wise=False),
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
         Transposed(keys=keys, indices=transposition_indices),
         ToTensord(keys=keys),
@@ -82,6 +76,7 @@ def get_transforms(
 
     val_transforms += [
         ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
+        NormalizeIntensityd(keys=["image"], channel_wise=False),
         Transposed(keys=keys, indices=transposition_indices),
         ToTensord(keys=keys),
     ]
