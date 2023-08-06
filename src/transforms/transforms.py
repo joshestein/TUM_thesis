@@ -50,7 +50,7 @@ def get_transforms(
                 keys=keys,
                 min_zoom=0.85,
                 max_zoom=1.15,
-                # Use area interpolation for images and nearest neighbor for labels.
+                # Use area interpolation for images and nearest neighbour for labels.
                 mode=(InterpolateMode.AREA, InterpolateMode.NEAREST_EXACT),
                 prob=0.25,
             ),
