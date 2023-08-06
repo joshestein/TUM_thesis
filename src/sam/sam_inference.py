@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import torch
 from monai.utils import set_determinism
-from segment_anything import sam_model_registry
+from segment_anything import sam_model_registry, SamPredictor
 from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 
@@ -57,7 +57,6 @@ def run_inference(test_loader: DataLoader, predictor, device, out_dir: Path, num
 
         save_single_figure(batch_index, inputs, bboxes, labels_per_class, masks, out_dir, num_classes=num_classes)
         dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
-        break
 
     return torch.tensor(dice_scores)
 
@@ -90,7 +89,6 @@ def run_batch_inference(test_loader: DataLoader, sam, device, out_dir: Path, num
         batched_output = sam(batched_input, multimask_output=False)
         save_figures(batch_index, batched_input, batched_output, out_dir, num_classes=num_classes)
         dice_scores.append(calculate_dice_from_sam_batch(batched_input, batched_output, num_classes=num_classes))
-        break
 
     return torch.tensor(dice_scores)
 
@@ -120,16 +118,10 @@ def main():
 
     figure_dir = out_dir / "sam" / "figures"
     os.makedirs(figure_dir, exist_ok=True)
-    # dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir)
-    # print(f"Dice scores: {dice_scores}")
-    # Dice scores: tensor([[0.9414, 0.4528, 0.9226]], dtype=torch.float64)
-
-    dice_scores_batch = run_batch_inference(test_loader, sam, device, figure_dir / "batch")
-    print(f"Dice scores batch: {dice_scores_batch}")
-
-    # mean_fg_dice = torch.mean(dice_scores, dim=0)
-    # print(f"Mean foreground dice: {mean_fg_dice}")
-    # print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+    dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir)
+    mean_fg_dice = torch.mean(dice_scores, dim=0)
+    print(f"Mean foreground dice: {mean_fg_dice}")
+    print(f"Mean dice: {torch.mean(mean_fg_dice)}")
 
 
 if __name__ == "__main__":
