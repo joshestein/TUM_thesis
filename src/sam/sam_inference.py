@@ -1,0 +1,84 @@
+import os
+import tomllib
+from pathlib import Path
+
+import numpy as np
+import torch
+from monai.utils import set_determinism
+from segment_anything import sam_model_registry
+from segment_anything.utils.transforms import ResizeLongestSide
+from torch.utils.data import DataLoader
+
+from src.datasets.acdc_dataset import ACDCDataset
+from src.sam.sam_utils import calculate_dice_from_sam_batch, get_bounding_box, prepare_image, save_figures
+from src.transforms.transforms import get_transforms
+from src.utils import setup_dirs
+
+
+def setup_sam(root_dir: Path, device, checkpoint="sam_vit_h_4b8939.pth", model_type="vit_h"):
+    checkpoint = root_dir / "models" / checkpoint
+    sam = sam_model_registry[model_type](checkpoint=checkpoint)
+    sam = sam.to(device)
+    return sam
+
+
+def run_inference(test_loader: DataLoader, sam, device, out_dir: Path, num_classes=4):
+    resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
+
+    dice_scores = []
+    for batch_index, batch in enumerate(test_loader):
+        batched_input = []
+        inputs, labels = batch["image"].to(device), batch["label"].to(device, dtype=torch.uint8)
+
+        for index, image in enumerate(inputs):
+            ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
+            prepared_image = prepare_image(image, resize_transform, device)
+
+            # Get bounding box for each class of one-hot encoded mask
+            for class_index in range(num_classes):
+                label = (ground_truth == class_index).astype(int)
+                bbox = None if np.count_nonzero(label) == 0 else np.array(get_bounding_box(label))
+                batched_input.append(
+                    {"image": prepared_image, "box": bbox, "original_size": image.shape[1:], "label": label}
+                )
+
+        batched_output = sam(batched_input, multimask_output=False)
+        save_figures(batch_index, batched_input, batched_output, out_dir, num_classes=num_classes)
+        dice_scores.append(calculate_dice_from_sam_batch(batched_output, labels, num_classes=num_classes))
+
+    return torch.tensor(dice_scores)
+
+
+def main():
+    root_dir = Path(os.getcwd()).parent.parent
+    data_dir, log_dir, out_dir = setup_dirs(root_dir)
+    data_dir = data_dir / "ACDC" / "database"
+
+    with open(root_dir / "config.toml", "rb") as file:
+        config = tomllib.load(file)
+
+    augment = config["hyperparameters"].get("augment", True)
+    batch_size = config["hyperparameters"].get("batch_size", 4)
+    set_determinism(seed=config["hyperparameters"]["seed"])
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    sam = setup_sam(root_dir, device)
+
+    _, val_transforms = get_transforms(spatial_dims=2, augment=augment)
+    # TODO: do we need separate test transforms?
+    test_data = ACDCDataset(data_dir=data_dir / "testing", transform=val_transforms)
+
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=0)
+
+    figure_dir = out_dir / "sam" / "figures"
+    os.makedirs(figure_dir, exist_ok=True)
+    dice_scores = run_inference(test_loader, sam, device, figure_dir)
+
+    mean_fg_dice = torch.mean(dice_scores, dim=0)
+    print(f"Mean foreground dice: {mean_fg_dice}")
+    print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+
+
+if __name__ == "__main__":
+    main()
