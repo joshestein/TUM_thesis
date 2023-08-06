@@ -2,6 +2,7 @@ import os
 import tomllib
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 from monai.utils import set_determinism
@@ -10,7 +11,14 @@ from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 
 from src.datasets.acdc_dataset import ACDCDataset
-from src.sam.sam_utils import calculate_dice_from_sam_batch, get_bounding_box, prepare_image, save_figures
+from src.sam.sam_utils import (
+    calculate_dice_for_classes,
+    calculate_dice_from_sam_batch,
+    get_bounding_box,
+    prepare_image,
+    save_figures,
+    save_single_figure,
+)
 from src.transforms.transforms import get_transforms
 from src.utils import setup_dirs
 
@@ -22,7 +30,39 @@ def setup_sam(root_dir: Path, device, checkpoint="sam_vit_h_4b8939.pth", model_t
     return sam
 
 
-def run_inference(test_loader: DataLoader, sam, device, out_dir: Path, num_classes=4):
+def run_inference(test_loader: DataLoader, predictor, device, out_dir: Path, num_classes=4):
+    """Expects the dataloader to have a batch size of 1."""
+    dice_scores = []
+    for batch_index, batch in enumerate(test_loader):
+        inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
+        inputs = cv2.cvtColor(inputs.permute(2, 1, 0).detach().cpu().numpy(), cv2.COLOR_GRAY2RGB)
+        # Scale to 0-255, convert to uint8
+        inputs = ((inputs - inputs.min()) * (1 / (inputs.max() - inputs.min()) * 255)).astype("uint8")
+        predictor.set_image(inputs)
+
+        labels = labels[0].permute(1, 0)  # Swap W, H
+
+        labels_per_class = []
+        bboxes = []
+        masks = []
+        for class_index in range(num_classes):
+            # Get bounding box for each class of one-hot encoded mask
+            label = (labels == class_index).astype(int)
+            labels_per_class.append(label)
+
+            bbox = None if np.count_nonzero(label) == 0 else np.array(get_bounding_box(label))
+            bboxes.append(bbox)
+            mask, _, _ = predictor.predict(box=bbox, multimask_output=False)
+            masks.append(mask)
+
+        save_single_figure(batch_index, inputs, bboxes, labels_per_class, masks, out_dir, num_classes=num_classes)
+        dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
+        break
+
+    return torch.tensor(dice_scores)
+
+
+def run_batch_inference(test_loader: DataLoader, sam, device, out_dir: Path, num_classes=4):
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
 
     dice_scores = []
@@ -39,12 +79,18 @@ def run_inference(test_loader: DataLoader, sam, device, out_dir: Path, num_class
                 label = (ground_truth == class_index).astype(int)
                 bbox = None if np.count_nonzero(label) == 0 else np.array(get_bounding_box(label))
                 batched_input.append(
-                    {"image": prepared_image, "box": bbox, "original_size": image.shape[1:], "label": label}
+                    {
+                        "image": prepared_image,
+                        "box": resize_transform.apply_boxes(bbox, image.shape[1:]),
+                        "original_size": image.shape[1:],
+                        "label": label,
+                    }
                 )
 
         batched_output = sam(batched_input, multimask_output=False)
         save_figures(batch_index, batched_input, batched_output, out_dir, num_classes=num_classes)
-        dice_scores.append(calculate_dice_from_sam_batch(batched_output, labels, num_classes=num_classes))
+        dice_scores.append(calculate_dice_from_sam_batch(batched_input, batched_output, num_classes=num_classes))
+        break
 
     return torch.tensor(dice_scores)
 
@@ -58,7 +104,8 @@ def main():
         config = tomllib.load(file)
 
     augment = config["hyperparameters"].get("augment", True)
-    batch_size = config["hyperparameters"].get("batch_size", 4)
+    # batch_size = config["hyperparameters"].get("batch_size", 4)
+    batch_size = 1
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -73,11 +120,16 @@ def main():
 
     figure_dir = out_dir / "sam" / "figures"
     os.makedirs(figure_dir, exist_ok=True)
-    dice_scores = run_inference(test_loader, sam, device, figure_dir)
+    # dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir)
+    # print(f"Dice scores: {dice_scores}")
+    # Dice scores: tensor([[0.9414, 0.4528, 0.9226]], dtype=torch.float64)
 
-    mean_fg_dice = torch.mean(dice_scores, dim=0)
-    print(f"Mean foreground dice: {mean_fg_dice}")
-    print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+    dice_scores_batch = run_batch_inference(test_loader, sam, device, figure_dir / "batch")
+    print(f"Dice scores batch: {dice_scores_batch}")
+
+    # mean_fg_dice = torch.mean(dice_scores, dim=0)
+    # print(f"Mean foreground dice: {mean_fg_dice}")
+    # print(f"Mean dice: {torch.mean(mean_fg_dice)}")
 
 
 if __name__ == "__main__":
