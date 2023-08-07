@@ -8,41 +8,12 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader, Subset
 
 from src.datasets.acdc_dataset import ACDCDataset
-from src.transforms.transforms import get_transforms
-
-
-def get_datasets(
-    spatial_dims: int,
-    percentage_data: float,
-    data_dir: Path,
-    percentage_slices: float = 1.0,
-    augment: bool = True,
-    sample_regions: list[str] = ("apex", "mid", "base"),
-):
-    train_transforms, val_transforms = get_transforms(
-        spatial_dims=spatial_dims,
-        augment=augment,
-        percentage_slices=percentage_slices,
-        sample_regions=sample_regions,
-    )
-
-    train_data = ACDCDataset(
-        data_dir=data_dir,
-        transform=train_transforms,
-        percentage_data=percentage_data,
-    )
-    val_data = ACDCDataset(
-        data_dir=data_dir,
-        transform=val_transforms,
-        percentage_data=percentage_data,
-    )
-
-    return train_data, val_data
+from src.datasets.mnms_dataset import MNMsDataset
 
 
 def get_train_dataloaders(
-    train_dataset: ACDCDataset,
-    val_dataset: ACDCDataset,
+    train_dataset: ACDCDataset | MNMsDataset,
+    val_dataset: ACDCDataset | MNMsDataset,
     batch_size: int = 1,
     num_workers: int = 0,
     validation_split: float = 0.8,
