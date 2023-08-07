@@ -16,7 +16,7 @@ class MNMsDataset(Dataset):
         percentage_data: float = 1.0,
     ):
         """
-        :param data_dir: Root data dir, in which "training" and "testing" folders are expected
+        :param data_dir: Path to training/testing data
         :param transform: Any transforms that should be applied
         :param percentage_data: The fraction of the data to use
         """
@@ -32,8 +32,11 @@ class MNMsDataset(Dataset):
         :returns A nested dictionary, where outer keys are patient folder names and inner keys are "end_diastole" and "end_systole",
         i.e. {"patient_name": {"end_diastole": 0, "end_systole": 12}}
         """
+        csv_file = "211230_M&Ms_Dataset_information_diagnosis_opendataset.csv"
+        root_dir = self._get_root_dir(csv_file)
+
         cardiac_phase_indexes = {}
-        with open(self.data_dir / "211230_M&Ms_Dataset_information_diagnosis_opendataset.csv") as csvfile:
+        with open(root_dir / csv_file) as csvfile:
             reader = csv.reader(csvfile)
             headers = next(reader)
             patient_index = headers.index("External code")
@@ -46,6 +49,17 @@ class MNMsDataset(Dataset):
                 }
 
         return cardiac_phase_indexes
+
+    def _get_root_dir(self, csv_file: str):
+        """Returns the root directory of the dataset, which contains the CSV metadata file."""
+        num_tries = 5
+        path = self.data_dir
+        for _ in range(num_tries):
+            if (path / csv_file).exists():
+                return path
+            path = path.parent
+
+        return path
 
     def __len__(self):
         return len(self.patients)
