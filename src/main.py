@@ -16,8 +16,8 @@ from src.train import train
 from src.utils import find_optimal_learning_rate, get_train_dataloaders, setup_dirs
 
 
-def main(dataset: str):
-    root_dir = Path(os.getcwd())
+def main(dataset_name: str):
+    root_dir = Path(os.getcwd()).parent
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
     with open(root_dir / "config.toml", "rb") as file:
@@ -31,7 +31,7 @@ def main(dataset: str):
     spatial_dims = config["hyperparameters"].get("spatial_dimensions", 3)
     validation_split = config["hyperparameters"].get("validation_split", 0.8)
 
-    dataset_helper = DatasetHelperFactory(dataset_name=dataset)
+    dataset_helper = DatasetHelperFactory(dataset_name=dataset_name)
     dataset = dataset_helper.dataset
 
     set_determinism(seed=config["hyperparameters"]["seed"])
@@ -114,13 +114,13 @@ def main(dataset: str):
                 tags=("limited_data", "limited_slices"),
                 reinit=True,
             )
-            wandb.config.dataset = dataset
+            wandb.config.dataset = dataset_name
             wandb.config.architecture = "UNet"
 
             out_dir = (
                 root_out_dir
                 / f"UNet_{spatial_dims}D"
-                / f"{dataset}"
+                / f"{dataset_name}"
                 / f"percentage_data_{percentage_data}"
                 / f"percentage_slices_{percentage_slices}"
             )
