@@ -94,18 +94,19 @@ def main(dataset: str):
             optimizer = torch.optim.Adam(model.parameters(), lr=optimal_learning_rate)
 
             wandb.init(
-                project=f"acdc-{spatial_dims}D-UNet-baseline-restart",
+                project=f"{dataset}-{spatial_dims}D-UNet-fresh-restart",
                 config=config["hyperparameters"],
                 dir=log_dir,
                 tags=("limited_data", "limited_slices"),
                 reinit=True,
             )
-            wandb.config.dataset = "ACDC"
+            wandb.config.dataset = dataset
             wandb.config.architecture = "UNet"
 
             out_dir = (
                 root_out_dir
                 / f"UNet_{spatial_dims}D"
+                / f"{dataset}"
                 / f"percentage_data_{percentage_data}"
                 / f"percentage_slices_{percentage_slices}"
             )
