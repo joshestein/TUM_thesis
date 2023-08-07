@@ -6,7 +6,7 @@ from pprint import pprint
 
 import torch
 import wandb
-from monai.losses import DiceLoss
+from monai.losses import DiceCELoss
 from monai.networks.layers import Norm
 from monai.networks.nets import UNet
 from monai.utils import set_determinism
@@ -37,7 +37,7 @@ def main(dataset: str):
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    loss_function = DiceLoss(to_onehot_y=True, softmax=True)
+    loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
     # TODO: weight decay check
     optimizer = torch.optim.Adam(model.parameters())
     optimal_learning_rate = find_optimal_learning_rate(
