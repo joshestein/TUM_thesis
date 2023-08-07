@@ -47,6 +47,9 @@ class MNMsDataset(Dataset):
 
         return cardiac_phase_indexes
 
+    def __len__(self):
+        return len(self.patients)
+
     def __getitem__(self, index):
         patient = self.patients[index]
 
