@@ -108,7 +108,7 @@ def main(dataset_name: str):
             optimizer = torch.optim.Adam(model.parameters(), lr=optimal_learning_rate)
 
             wandb.init(
-                project=f"{dataset}-{spatial_dims}D-UNet-fresh-restart",
+                project=f"{dataset_name}-{spatial_dims}D-UNet-fresh-restart",
                 config=config["hyperparameters"],
                 dir=log_dir,
                 tags=("limited_data", "limited_slices"),
