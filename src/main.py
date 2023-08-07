@@ -63,6 +63,7 @@ def main():
             config["hyperparameters"]["percentage_slices"] = percentage_slices
 
             train_data, val_data = get_datasets(
+                spatial_dims=spatial_dimensions,
                 augment=augment,
                 percentage_data=percentage_data,
                 percentage_slices=percentage_slices,
@@ -118,7 +119,6 @@ def main():
                 epochs=epochs,
                 device=device,
                 out_dir=out_dir,
-                dimensions=spatial_dimensions,
             )
 
             wandb.finish()

@@ -150,7 +150,6 @@ def get_epoch_loss(
         labels = labels.permute(0, 1, 3, 4, 2)
 
     loss = loss_function(outputs, labels)
-
     loss.backward()
     optimizer.step()
 
