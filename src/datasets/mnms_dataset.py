@@ -8,7 +8,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 
-class MMsDataset(Dataset):
+class MNMsDataset(Dataset):
     def __init__(
         self,
         data_dir: str | Path,
