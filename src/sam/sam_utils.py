@@ -64,8 +64,8 @@ def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path,
         if class_index == 0:
             continue
 
-        plt.subplot(num_classes, 3, class_index * 3 + 1)
         # Original input
+        plt.subplot(num_classes, 3, (class_index - 1) * 3 + 1)
         plt.imshow(inputs)
         box = bboxes[class_index]
         if box is not None:
@@ -73,12 +73,12 @@ def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path,
         plt.axis("off")
 
         # Ground truth
-        plt.subplot(num_classes, 3, class_index * 3 + 2)
+        plt.subplot(num_classes, 3, (class_index - 1) * 3 + 2)
         plt.imshow(labels[class_index])
         plt.axis("off")
 
         # Prediction
-        plt.subplot(num_classes, 3, class_index * 3 + 3)
+        plt.subplot(num_classes, 3, (class_index - 1) * 3 + 3)
         show_mask(masks[class_index], plt.gca())
         plt.axis("off")
 
