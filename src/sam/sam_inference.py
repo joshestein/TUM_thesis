@@ -10,7 +10,7 @@ from segment_anything import sam_model_registry, SamPredictor
 from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 
-from src.datasets.acdc_dataset import ACDCDataset
+from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
     calculate_dice_from_sam_batch,
@@ -19,7 +19,6 @@ from src.sam.sam_utils import (
     save_figures,
     save_single_figure,
 )
-from src.transforms.transforms import get_transforms
 from src.utils import setup_dirs
 
 
@@ -93,10 +92,9 @@ def run_batch_inference(test_loader: DataLoader, sam, device, out_dir: Path, num
     return torch.tensor(dice_scores)
 
 
-def main():
+def main(dataset: str):
     root_dir = Path(os.getcwd()).parent.parent
     data_dir, log_dir, out_dir = setup_dirs(root_dir)
-    data_dir = data_dir / "ACDC" / "database"
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
@@ -104,16 +102,17 @@ def main():
     augment = config["hyperparameters"].get("augment", True)
     # batch_size = config["hyperparameters"].get("batch_size", 4)
     batch_size = 1
+    spatial_dims = 2
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     sam = setup_sam(root_dir, device)
 
-    _, val_transforms = get_transforms(spatial_dims=2, augment=augment)
-    # TODO: do we need separate test transforms?
-    test_data = ACDCDataset(data_dir=data_dir / "testing", transform=val_transforms)
+    dataset_helper = DatasetHelperFactory(dataset_name=dataset)
+    dataset_helper = dataset_helper.dataset(spatial_dims=spatial_dims, data_dir=data_dir, augment=augment)
 
+    test_data = dataset_helper.get_test_dataset()
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=0)
 
     figure_dir = out_dir / "sam" / "figures"
@@ -125,4 +124,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        type=str,
+        default="acdc",
+    )
+    args = parser.parse_args()
+    main(args.dataset)
