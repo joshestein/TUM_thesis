@@ -115,7 +115,7 @@ def main(dataset: str):
     test_data = dataset_helper.get_test_dataset()
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    figure_dir = out_dir / "sam" / "figures"
+    figure_dir = out_dir / "sam" / "figures" / dataset
     os.makedirs(figure_dir, exist_ok=True)
     dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
@@ -134,4 +134,5 @@ if __name__ == "__main__":
         default="acdc",
     )
     args = parser.parse_args()
+
     main(args.dataset)
