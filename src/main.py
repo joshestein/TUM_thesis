@@ -64,14 +64,13 @@ def main(dataset: str):
         for percentage_slices in [0.8, 0.6, 0.4, 0.2, 0.1, 0.05]:
             config["hyperparameters"]["percentage_slices"] = percentage_slices
 
-            dataset(
+            train_data, val_data = dataset(
                 spatial_dims=spatial_dims,
                 data_dir=data_dir,
                 augment=augment,
                 percentage_slices=percentage_slices,
                 percentage_data=percentage_data,
-            )
-            train_data, val_data = dataset.get_training_datasets()
+            ).get_training_datasets()
 
             train_loader, val_loader = get_train_dataloaders(
                 train_dataset=train_data,
