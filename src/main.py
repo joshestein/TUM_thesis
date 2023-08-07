@@ -11,26 +11,28 @@ from monai.networks.layers import Norm
 from monai.networks.nets import UNet
 from monai.utils import set_determinism
 
+from src.datasets.dataset_helper import DatasetHelperFactory
 from src.train import train
-from src.utils import find_optimal_learning_rate, get_datasets, get_train_dataloaders, setup_dirs
+from src.utils import find_optimal_learning_rate, get_train_dataloaders, setup_dirs
 
 
-def main():
+def main(dataset: str):
     root_dir = Path(os.getcwd())
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
-    data_dir = data_dir / "ACDC" / "database"
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
 
     pprint(config)
-
     augment = config["hyperparameters"].get("augment", True)
     batch_size = config["hyperparameters"].get("batch_size", 4)
     epochs = config["hyperparameters"].get("epochs", 100)
     learning_rate = config["hyperparameters"].get("learning_rate", 1e-5)
     spatial_dims = config["hyperparameters"].get("spatial_dimensions", 3)
     validation_split = config["hyperparameters"].get("validation_split", 0.8)
+
+    dataset_helper = DatasetHelperFactory(dataset_name=dataset)
+    dataset = dataset_helper.dataset
 
     set_determinism(seed=config["hyperparameters"]["seed"])
 
@@ -62,13 +64,14 @@ def main():
         for percentage_slices in [0.8, 0.6, 0.4, 0.2, 0.1, 0.05]:
             config["hyperparameters"]["percentage_slices"] = percentage_slices
 
-            train_data, val_data = get_datasets(
-                spatial_dims=spatial_dimensions,
+            dataset(
+                spatial_dims=spatial_dims,
+                data_dir=data_dir,
                 augment=augment,
-                percentage_data=percentage_data,
                 percentage_slices=percentage_slices,
-                data_dir=data_dir / "training",
+                percentage_data=percentage_data,
             )
+            train_data, val_data = dataset.get_training_datasets()
 
             train_loader, val_loader = get_train_dataloaders(
                 train_dataset=train_data,
@@ -127,4 +130,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        type=str,
+        default="acdc",
+    )
+    args = parser.parse_args()
+
+    main(args.dataset)
