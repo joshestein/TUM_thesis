@@ -38,6 +38,31 @@ def main(dataset: str):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
+
+    train_data, val_data = dataset(
+        spatial_dims=spatial_dims, data_dir=data_dir, augment=augment, percentage_slices=1.0, percentage_data=1.0
+    ).get_training_datasets()
+
+    train_loader, val_loader = get_train_dataloaders(
+        train_dataset=train_data,
+        val_dataset=val_data,
+        batch_size=batch_size,
+        validation_split=validation_split,
+    )
+
+    model = UNet(
+        spatial_dims=spatial_dims,
+        in_channels=1,
+        out_channels=4,
+        # channels=(26, 52, 104, 208, 416),
+        channels=(16, 32, 64, 128, 256),
+        strides=(2, 2, 2, 2),
+        norm=Norm.BATCH,
+        # num_res_units=4,
+        dropout=0.5,
+    ).to(device)
+    torch.save(model, root_dir / "initial_model.pt")
+
     # TODO: weight decay check
     optimizer = torch.optim.Adam(model.parameters())
     optimal_learning_rate = find_optimal_learning_rate(
@@ -79,18 +104,7 @@ def main(dataset: str):
                 validation_split=validation_split,
             )
 
-            model = UNet(
-                spatial_dims=spatial_dims,
-                in_channels=1,
-                out_channels=4,
-                # channels=(26, 52, 104, 208, 416),
-                channels=(16, 32, 64, 128, 256),
-                strides=(2, 2, 2, 2),
-                norm=Norm.INSTANCE,
-                # num_res_units=4,
-                # dropout=0.5,
-            ).to(device)
-
+            model = torch.load(root_dir / "initial_model.pt")
             optimizer = torch.optim.Adam(model.parameters(), lr=optimal_learning_rate)
 
             wandb.init(
