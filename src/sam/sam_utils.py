@@ -59,7 +59,7 @@ def prepare_image(image, transform, device):
 
 def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path, num_classes=4):
     plt.ioff()
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(8, 8))
     for class_index in range(num_classes):
         if class_index == 0:
             continue
