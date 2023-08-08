@@ -1,14 +1,13 @@
 from monai.transforms import (
     Compose,
     EnsureChannelFirstd,
-    NormalizeIntensityd,
     RandAdjustContrastd,
     RandFlipd,
     RandRotate90d,
     RandSpatialCropd,
     RandZoomd,
     ResizeWithPadOrCropd,
-    SpatialPadd,
+    ScaleIntensityRangePercentilesd,
     ToTensord,
     Transposed,
 )
@@ -32,14 +31,24 @@ def get_transforms(
     train_transforms = [EnsureChannelFirstd(keys=keys, channel_dim="no_channel")]
     val_transforms = [EnsureChannelFirstd(keys=keys, channel_dim="no_channel")]
 
-    if spatial_dims == 3:
-        spatial_size = (224, 224, 16)
-        transposition_indices = (0, 3, 1, 2)
-    else:
-        spatial_size = (224, 224)
-        transposition_indices = (0, 1, 2)
-        train_transforms += [RandomSliced(keys=keys)]
-        val_transforms += [RandomSliced(keys=keys)]
+    # Pad to fixed size
+    spatial_size = (224, 224, 16)
+    train_transforms += [
+        ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
+        RemoveSlicesd(
+            keys=keys,
+            percentage_slices=percentage_slices,
+            sample_regions=sample_regions,
+        ),
+        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
+        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
+    ]
+
+    val_transforms += [
+        ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
+        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
+        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
+    ]
 
     if augment:
         train_transforms += [
@@ -57,27 +66,20 @@ def get_transforms(
             RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.25),
         ]
 
-    # Pad to fixed size
+    if spatial_dims == 2:
+        train_transforms += [RandomSliced(keys=keys)]
+        val_transforms += [RandomSliced(keys=keys)]
+
+    # transposition_indices = (0, 1, 2) if spatial_dims == 2 else (0, 2, 3, 1)
+
     train_transforms += [
-        RemoveSlicesd(
-            keys=keys,
-            percentage_slices=percentage_slices,
-            sample_regions=sample_regions,
-        ),
-        # ResizeWithPadOrCrop only center crops - we want random cropping, so we explicitly pad and then crop
-        # Since we have 4 layers in UNet, we must have dimensions divisible by 2**4 = 16
-        SpatialPadd(keys=keys, spatial_size=spatial_size, mode="constant"),
-        RandSpatialCropd(keys=keys, roi_size=spatial_size, random_size=False),
-        NormalizeIntensityd(keys=["image"], channel_wise=False),
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
-        Transposed(keys=keys, indices=transposition_indices),
+        # Transposed(keys=keys, indices=transposition_indices),
         ToTensord(keys=keys),
     ]
 
     val_transforms += [
-        ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
-        NormalizeIntensityd(keys=["image"], channel_wise=False),
-        Transposed(keys=keys, indices=transposition_indices),
+        # Transposed(keys=keys, indices=transposition_indices),
         ToTensord(keys=keys),
     ]
 
