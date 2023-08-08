@@ -126,7 +126,7 @@ def main(dataset_name: str):
             )
             os.makedirs(out_dir, exist_ok=True)
 
-            epoch_loss_values, metric_values = train(
+            _, _ = train(
                 model=model,
                 train_loader=train_loader,
                 val_loader=val_loader,
