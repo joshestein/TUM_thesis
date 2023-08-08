@@ -31,7 +31,7 @@ def train(
         str, list[float] | list[list[float]]
     ] = {}  # For each metric, store a list of values one for each validation epoch
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=10, verbose=True)
 
     for epoch in range(epochs):
         print("-" * 10)
