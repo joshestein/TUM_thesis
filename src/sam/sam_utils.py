@@ -1,9 +1,12 @@
 from pathlib import Path
+from typing import Optional
 
 import cv2
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from segment_anything.modeling import Sam
+from segment_anything.utils.transforms import ResizeLongestSide
 
 
 def get_bounding_box(ground_truth_map):
@@ -57,7 +60,54 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path, num_classes=4):
+def get_predictions(sam: Sam, transform: Optional, inputs: torch.tensor, labels: torch.tensor, num_classes=4):
+    """Given inputs and labels, runs inference on all examples in the batch.
+    For each example, returns the predicted masks, ground truth masks, bounding boxes, and transformed images.
+
+    Note that for each input image, there are num_classes predictions, one for each class.
+    """
+    batched_input = []
+    if transform is None:
+        transform = ResizeLongestSide(sam.image_encoder.img_size)
+
+    for index, image in enumerate(inputs):
+        ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
+        prepared_image = prepare_image(image, transform, sam.device)
+
+        # Get bounding box for each class of one-hot encoded mask
+        for class_index in range(num_classes):
+            label = (ground_truth == class_index).astype(int)
+            bbox = None if np.count_nonzero(label) == 0 else torch.tensor(get_bounding_box(label))
+            batched_input.append(
+                {
+                    "image": prepared_image,
+                    "boxes": transform.apply_boxes_torch(bbox, image.shape[1:]) if bbox is not None else None,
+                    "original_size": image.shape[1:],
+                    "gt": label,
+                }
+            )
+
+    # TODO: the gradients are disabled in Sam with the decorator @torch.no_grad
+    batched_output = sam(batched_input, multimask_output=False)
+
+    masks, ground_truths, bboxes, transformed_images = [], [], [], []
+    for i in range(0, len(batched_output), num_classes):
+        masks.append([batched_output[i + class_index]["masks"].long() for class_index in range(num_classes)])
+        ground_truths.append([batched_input[i + class_index]["gt"] for class_index in range(num_classes)])
+        bboxes.append(
+            [
+                batched_input[i + class_index]["boxes"][0]
+                if batched_input[i + class_index]["boxes"] is not None
+                else None
+                for class_index in range(num_classes)
+            ]
+        )
+        transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
+
+    return masks, ground_truths, bboxes, transformed_images
+
+
+def save_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path, num_classes=4):
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
     for class_index in range(num_classes):
@@ -66,7 +116,7 @@ def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path,
 
         # Original input
         plt.subplot(num_classes, 3, (class_index - 1) * 3 + 1)
-        plt.imshow(inputs)
+        plt.imshow(inputs, cmap="gray")
         box = bboxes[class_index]
         if box is not None:
             show_box(box, plt.gca())
@@ -86,34 +136,13 @@ def save_single_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path,
     plt.close(fig)
 
 
-def save_figures(batch_index: int, batched_input, batched_output, out_dir: Path, num_classes=4):
-    for i in range(0, len(batched_output), num_classes):
-        # Move channels last
-        inputs = batched_input[i]["image"].permute(1, 2, 0).detach().cpu()
-        bboxes = [batched_input[i + class_index]["box"][0] for class_index in range(num_classes)]
-        labels = [batched_input[i + class_index]["label"] for class_index in range(num_classes)]
-        masks = [batched_output[i + class_index]["masks"].detach().cpu() for class_index in range(num_classes)]
-        save_single_figure(batch_index * 4 + i, inputs, bboxes, labels, masks, out_dir, num_classes=num_classes)
-
-
 def calculate_dice_for_classes(masks, labels, ignore_background=True, num_classes=4, eps=1e-6):
     dice_scores = []
     for class_index in range(num_classes):
         if ignore_background and class_index == 0:
             continue
 
-        dice = _calculate_dice(masks[class_index], labels[class_index])
-        dice_scores.append(dice)
-
-    return dice_scores
-
-
-def calculate_dice_from_sam_batch(batched_input, batched_output, ignore_background=True, num_classes=4):
-    dice_scores = []
-    for i in range(0, len(batched_output), num_classes):
-        masks = [batched_output[i + class_index]["masks"].long() for class_index in range(num_classes)]
-        labels = [batched_input[i + class_index]["label"] for class_index in range(num_classes)]
-        dice = calculate_dice_for_classes(masks, labels, ignore_background=ignore_background, num_classes=num_classes)
+        dice = _calculate_dice(masks[class_index], labels[class_index], eps=eps)
         dice_scores.append(dice)
 
     return dice_scores

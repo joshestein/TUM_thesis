@@ -14,11 +14,9 @@ from torch.utils.data import DataLoader
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
-    calculate_dice_from_sam_batch,
     get_bounding_box,
-    prepare_image,
-    save_figures,
-    save_single_figure,
+    get_predictions,
+    save_figure,
 )
 from src.utils import setup_dirs
 
@@ -44,9 +42,7 @@ def run_inference(
 
         labels = labels[0].permute(1, 0)  # Swap W, H
 
-        labels_per_class = []
-        bboxes = []
-        masks = []
+        labels_per_class, bboxes, masks = [], [], []
         for class_index in range(num_classes):
             # Get bounding box for each class of one-hot encoded mask
             label = (labels == class_index).astype(int)
@@ -57,7 +53,7 @@ def run_inference(
             mask, _, _ = predictor.predict(box=bbox, multimask_output=False)
             masks.append(mask)
 
-        save_single_figure(batch_index, inputs, bboxes, labels_per_class, masks, out_dir, num_classes=num_classes)
+        save_figure(batch_index, inputs, bboxes, labels_per_class, masks, out_dir, num_classes=num_classes)
         dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
 
     return torch.tensor(dice_scores)
@@ -65,32 +61,27 @@ def run_inference(
 
 def run_batch_inference(test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_classes=4):
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
-
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
-        batched_input = []
         inputs, labels = batch["image"].to(device), batch["label"].to(device, dtype=torch.uint8)
 
-        for index, image in enumerate(inputs):
-            ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
-            prepared_image = prepare_image(image, resize_transform, device)
+        masks, labels, boxes, transformed_images = get_predictions(
+            sam=sam, transform=resize_transform, inputs=inputs, labels=labels, num_classes=num_classes
+        )
 
-            # Get bounding box for each class of one-hot encoded mask
-            for class_index in range(num_classes):
-                label = (ground_truth == class_index).astype(int)
-                bbox = None if np.count_nonzero(label) == 0 else np.array(get_bounding_box(label))
-                batched_input.append(
-                    {
-                        "image": prepared_image,
-                        "box": resize_transform.apply_boxes(bbox, image.shape[1:]),
-                        "original_size": image.shape[1:],
-                        "label": label,
-                    }
-                )
+        for i in range(inputs.shape[0]):
+            save_figure(
+                batch_index,
+                transformed_images[i],
+                boxes[i],
+                labels[i],
+                masks[i],
+                out_dir=out_dir,
+                num_classes=num_classes,
+            )
+            dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
 
-        batched_output = sam(batched_input, multimask_output=False)
-        save_figures(batch_index, batched_input, batched_output, out_dir, num_classes=num_classes)
-        dice_scores.append(calculate_dice_from_sam_batch(batched_input, batched_output, num_classes=num_classes))
+        break
 
     return torch.tensor(dice_scores)
 
