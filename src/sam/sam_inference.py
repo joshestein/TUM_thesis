@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from monai.utils import set_determinism
 from segment_anything import sam_model_registry, SamPredictor
+from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 
@@ -22,14 +23,16 @@ from src.sam.sam_utils import (
 from src.utils import setup_dirs
 
 
-def setup_sam(root_dir: Path, device, checkpoint="sam_vit_h_4b8939.pth", model_type="vit_h"):
+def setup_sam(root_dir: Path, device: str | torch.device, checkpoint="sam_vit_h_4b8939.pth", model_type="vit_h"):
     checkpoint = root_dir / "models" / checkpoint
     sam = sam_model_registry[model_type](checkpoint=checkpoint)
     sam = sam.to(device)
     return sam
 
 
-def run_inference(test_loader: DataLoader, predictor, device, out_dir: Path, num_classes=4):
+def run_inference(
+    test_loader: DataLoader, predictor: SamPredictor, device: str | torch.device, out_dir: Path, num_classes=4
+):
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
@@ -60,7 +63,7 @@ def run_inference(test_loader: DataLoader, predictor, device, out_dir: Path, num
     return torch.tensor(dice_scores)
 
 
-def run_batch_inference(test_loader: DataLoader, sam, device, out_dir: Path, num_classes=4):
+def run_batch_inference(test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_classes=4):
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
 
     dice_scores = []
