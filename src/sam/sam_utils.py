@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -60,7 +59,7 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_predictions(sam: Sam, transform: Optional, inputs: torch.tensor, labels: torch.tensor, num_classes=4):
+def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_classes=4, transform=None):
     """Given inputs and labels, runs inference on all examples in the batch.
     For each example, returns the predicted masks, ground truth masks, bounding boxes, and transformed images.
 
@@ -76,7 +75,7 @@ def get_predictions(sam: Sam, transform: Optional, inputs: torch.tensor, labels:
 
         # Get bounding box for each class of one-hot encoded mask
         for class_index in range(num_classes):
-            label = (ground_truth == class_index).astype(int)
+            label = torch.tensor((ground_truth == class_index).astype(int))
             bbox = None if np.count_nonzero(label) == 0 else torch.tensor(get_bounding_box(label))
             batched_input.append(
                 {
@@ -92,18 +91,22 @@ def get_predictions(sam: Sam, transform: Optional, inputs: torch.tensor, labels:
 
     masks, ground_truths, bboxes, transformed_images = [], [], [], []
     for i in range(0, len(batched_output), num_classes):
-        masks.append([batched_output[i + class_index]["masks"].long() for class_index in range(num_classes)])
-        ground_truths.append([batched_input[i + class_index]["gt"] for class_index in range(num_classes)])
-        bboxes.append(
-            [
-                batched_input[i + class_index]["boxes"][0]
-                if batched_input[i + class_index]["boxes"] is not None
-                else None
-                for class_index in range(num_classes)
-            ]
-        )
+        collated_masks = [
+            batched_output[i + class_index]["masks"].squeeze().long() for class_index in range(num_classes)
+        ]
+        collated_gts = [batched_input[i + class_index]["gt"] for class_index in range(num_classes)]
+        collated_boxes = [
+            batched_input[i + class_index]["boxes"][0] if batched_input[i + class_index]["boxes"] is not None else None
+            for class_index in range(num_classes)
+        ]
+        masks.append(torch.stack(collated_masks))
+        ground_truths.append(torch.stack(collated_gts))
+        bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
+    masks = torch.stack(masks)
+    ground_truths = torch.stack(ground_truths)
+    transformed_images = torch.stack(transformed_images)
     return masks, ground_truths, bboxes, transformed_images
 
 
