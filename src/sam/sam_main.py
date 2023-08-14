@@ -55,7 +55,42 @@ def main(dataset_name: str):
     )
 
     sam = setup_sam(root_dir, device)
+    optimizer = torch.optim.Adam(sam.mask_decoder.parameters(), lr=learning_rate)
+
+    out_dir = root_out_dir / "sam" / dataset_name
+    os.makedirs(out_dir, exist_ok=True)
+
+    wandb.init(
+        project=f"sam_{dataset_name}",
+        config=config["hyperparameters"],
+        dir=log_dir,
+    )
+    wandb.config.dataset = dataset_name
+    wandb.config.loss = loss
+
+    train(
+        sam=sam,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        loss_function=loss_function,
+        optimizer=optimizer,
+        val_interval=5,
+        epochs=epochs,
+        device=device,
+        out_dir=out_dir,
+    )
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        type=str,
+        default="acdc",
+    )
+    args = parser.parse_args()
+
+    main(args.dataset)
