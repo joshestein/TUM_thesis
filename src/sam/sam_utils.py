@@ -6,6 +6,7 @@ import torch
 from matplotlib import pyplot as plt
 from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
+from torch.nn.functional import threshold
 
 
 def get_bounding_box(ground_truth_map):
@@ -75,7 +76,7 @@ def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_cl
 
         # Get bounding box for each class of one-hot encoded mask
         for class_index in range(num_classes):
-            label = torch.tensor((ground_truth == class_index).astype(int))
+            label = torch.as_tensor(ground_truth == class_index, dtype=torch.uint8)
             bbox = None if np.count_nonzero(label) == 0 else torch.tensor(get_bounding_box(label))
             batched_input.append(
                 {
@@ -87,13 +88,12 @@ def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_cl
             )
 
     # TODO: the gradients are disabled in Sam with the decorator @torch.no_grad
-    batched_output = sam(batched_input, multimask_output=False)
+    # batched_output = sam(batched_input, multimask_output=False)
+    batched_output = forward(sam, batched_input, multimask_output=False)
 
     masks, ground_truths, bboxes, transformed_images = [], [], [], []
     for i in range(0, len(batched_output), num_classes):
-        collated_masks = [
-            batched_output[i + class_index]["masks"].squeeze().long() for class_index in range(num_classes)
-        ]
+        collated_masks = [batched_output[i + class_index]["masks"].squeeze() for class_index in range(num_classes)]
         collated_gts = [batched_input[i + class_index]["gt"] for class_index in range(num_classes)]
         collated_boxes = [
             batched_input[i + class_index]["boxes"][0] if batched_input[i + class_index]["boxes"] is not None else None
@@ -159,3 +159,47 @@ def _calculate_dice(prediction, ground_truth, eps=1e-6):
 
     dice = (2 * tp.sum() + eps) / (2 * tp.sum() + fp.sum() + fn.sum() + eps)
     return dice
+
+
+def forward(sam: Sam, batched_input: list[dict[str, any]], multimask_output=False):
+    input_images = torch.stack([sam.preprocess(x["image"]) for x in batched_input], dim=0)
+
+    with torch.no_grad():
+        image_embeddings = sam.image_encoder(input_images)
+
+    outputs = []
+    for image_record, curr_embedding in zip(batched_input, image_embeddings):
+        if "point_coords" in image_record:
+            points = (image_record["point_coords"], image_record["point_labels"])
+        else:
+            points = None
+
+        with torch.no_grad():
+            sparse_embeddings, dense_embeddings = sam.prompt_encoder(
+                points=points,
+                boxes=image_record.get("boxes", None),
+                masks=image_record.get("mask_inputs", None),
+            )
+
+        low_res_masks, iou_predictions = sam.mask_decoder(
+            image_embeddings=curr_embedding.unsqueeze(0),
+            image_pe=sam.prompt_encoder.get_dense_pe(),
+            sparse_prompt_embeddings=sparse_embeddings,
+            dense_prompt_embeddings=dense_embeddings,
+            multimask_output=multimask_output,
+        )
+        masks = sam.postprocess_masks(
+            low_res_masks,
+            input_size=image_record["image"].shape[-2:],
+            original_size=image_record["original_size"],
+        )
+        masks = threshold(masks, sam.mask_threshold, 0)
+        # masks = masks > sam.mask_threshold
+        outputs.append(
+            {
+                "masks": masks,
+                "iou_predictions": iou_predictions,
+                "low_res_logits": low_res_masks,
+            }
+        )
+    return outputs
