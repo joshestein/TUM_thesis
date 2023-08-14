@@ -4,16 +4,18 @@ from pathlib import Path
 from pprint import pprint
 
 import torch
+import wandb
 from monai.losses import DiceCELoss, DiceLoss
 from monai.utils import set_determinism
 
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_inference import setup_sam
+from src.sam.sam_train import train
 from src.utils import get_train_dataloaders, setup_dirs
 
 
 def main(dataset_name: str):
-    root_dir = Path(os.getcwd()).parent
+    root_dir = Path(os.getcwd()).parent.parent
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
     with open(root_dir / "config.toml", "rb") as file:
