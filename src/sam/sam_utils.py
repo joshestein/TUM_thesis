@@ -9,17 +9,17 @@ from segment_anything.utils.transforms import ResizeLongestSide
 from torch.nn.functional import threshold
 
 
-def get_bounding_box(ground_truth_map):
+def get_bounding_box(ground_truth_map: torch.tensor):
     # get bounding box from mask
-    y_indices, x_indices = np.where(ground_truth_map > 0)
-    x_min, x_max = np.min(x_indices), np.max(x_indices)
-    y_min, y_max = np.min(y_indices), np.max(y_indices)
+    y_indices, x_indices = torch.where(ground_truth_map > 0)
+    x_min, x_max = torch.min(x_indices), torch.max(x_indices)
+    y_min, y_max = torch.min(y_indices), torch.max(y_indices)
     # add perturbation to bounding box coordinates
     height, width = ground_truth_map.shape
-    x_min = max(0, x_min - np.random.randint(0, 20))
-    x_max = min(width, x_max + np.random.randint(0, 20))
-    y_min = max(0, y_min - np.random.randint(0, 20))
-    y_max = min(height, y_max + np.random.randint(0, 20))
+    x_min = max(0, x_min - torch.randint(0, 20, size=()))
+    x_max = min(width, x_max + torch.randint(0, 20, size=()))
+    y_min = max(0, y_min - torch.randint(0, 20, size=()))
+    y_max = min(height, y_max + torch.randint(0, 20, size=()))
     bbox = [x_min, y_min, x_max, y_max]
 
     return bbox
@@ -53,7 +53,7 @@ def show_box(box, ax):
 
 
 def prepare_image(image, transform, device):
-    image = cv2.cvtColor(image.permute(2, 1, 0).numpy(), cv2.COLOR_GRAY2RGB)
+    image = cv2.cvtColor(image.permute(2, 1, 0).cpu().numpy(), cv2.COLOR_GRAY2RGB)
     image = ((image - image.min()) * (1 / (image.max() - image.min()) * 255)).astype("uint8")
     image = transform.apply_image(image)
     image = torch.as_tensor(image, device=device)
@@ -76,8 +76,8 @@ def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_cl
 
         # Get bounding box for each class of one-hot encoded mask
         for class_index in range(num_classes):
-            label = torch.as_tensor(ground_truth == class_index, dtype=torch.uint8)
-            bbox = None if np.count_nonzero(label) == 0 else torch.tensor(get_bounding_box(label))
+            label = torch.as_tensor(ground_truth == class_index, dtype=torch.uint8, device=sam.device)
+            bbox = None if torch.count_nonzero(label) == 0 else torch.tensor(get_bounding_box(label), device=sam.device)
             batched_input.append(
                 {
                     "image": prepared_image,
