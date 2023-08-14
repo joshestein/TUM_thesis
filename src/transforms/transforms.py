@@ -5,6 +5,7 @@ from monai.transforms import (
     RandFlipd,
     RandRotate90d,
     RandSpatialCropd,
+    RandShiftIntensityd,
     RandZoomd,
     ResizeWithPadOrCropd,
     ScaleIntensityRangePercentilesd,
@@ -40,14 +41,10 @@ def get_transforms(
             percentage_slices=percentage_slices,
             sample_regions=sample_regions,
         ),
-        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
-        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
     ]
 
     val_transforms += [
         ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
-        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
-        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
     ]
 
     if augment:
@@ -75,11 +72,15 @@ def get_transforms(
     train_transforms += [
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
         # Transposed(keys=keys, indices=transposition_indices),
+        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
+        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
         ToTensord(keys=keys),
     ]
 
     val_transforms += [
         # Transposed(keys=keys, indices=transposition_indices),
+        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
+        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
         ToTensord(keys=keys),
     ]
 
