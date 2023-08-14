@@ -37,9 +37,9 @@ def main(dataset_name: str):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     loss = "dice"
     if loss == "dice":
-        loss_function = DiceLoss(to_onehot_y=True, softmax=True)
+        loss_function = DiceLoss(to_onehot_y=False, softmax=False)
     elif loss == "dice_ce":
-        loss_function = DiceCELoss(to_onehot_y=True, softmax=True)
+        loss_function = DiceCELoss(to_onehot_y=False, softmax=False)
     else:
         return
 
