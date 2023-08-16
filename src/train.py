@@ -4,7 +4,7 @@ from typing import Optional
 import torch
 import wandb
 from monai.data import decollate_batch
-from monai.transforms import AsDiscrete, Compose
+from monai.transforms import Activations, AsDiscrete, Compose
 from torch.utils.data import DataLoader
 
 from src.metrics import METRICS
@@ -175,7 +175,7 @@ def get_validation_loss(
 
 
 def compute_val_loss_and_metrics(outputs, labels, loss_function):
-    post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
+    post_pred = Compose([Activations(softmax=True), AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
 
     val_loss = loss_function(outputs, labels)
