@@ -1,11 +1,10 @@
 from monai.transforms import (
     Compose,
     EnsureChannelFirstd,
-    RandAdjustContrastd,
     NormalizeIntensityd,
+    RandAdjustContrastd,
     RandFlipd,
     RandRotate90d,
-    RandSpatialCropd,
     RandShiftIntensityd,
     RandZoomd,
     ResizeWithPadOrCropd,
@@ -62,6 +61,7 @@ def get_transforms(
                 prob=0.25,
             ),
             RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.25),
+            RandShiftIntensityd(keys=["image"], offsets=0.1, prob=1.0),
         ]
 
     if spatial_dims == 2:
