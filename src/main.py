@@ -64,7 +64,7 @@ def main(dataset_name: str):
         channels=(16, 32, 64, 128, 256),
         strides=(2, 2, 2, 2),
         norm=Norm.BATCH,
-        # num_res_units=4,
+        num_res_units=4,
         dropout=0.5,
     ).to(device)
     torch.save(model, root_dir / "initial_model.pt")
