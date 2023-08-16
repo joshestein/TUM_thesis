@@ -2,13 +2,14 @@ from monai.transforms import (
     Compose,
     EnsureChannelFirstd,
     RandAdjustContrastd,
+    NormalizeIntensityd,
     RandFlipd,
     RandRotate90d,
     RandSpatialCropd,
     RandShiftIntensityd,
     RandZoomd,
     ResizeWithPadOrCropd,
-    ScaleIntensityRangePercentilesd,
+    ScaleIntensityd,
     ToTensord,
     Transposed,
 )
@@ -72,15 +73,17 @@ def get_transforms(
     train_transforms += [
         # Move depth to the second dimension (Pytorch expects 3D inputs in the shape of C x D x H x W)
         # Transposed(keys=keys, indices=transposition_indices),
-        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
-        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
+        ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
+        # ScaleIntensityRangePercentilesd(keys=["image"], lower=0, upper=100, b_min=0.0, b_max=1.0, clip=True),
+        NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
         ToTensord(keys=keys),
     ]
 
     val_transforms += [
         # Transposed(keys=keys, indices=transposition_indices),
-        # NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
-        ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
+        ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
+        # ScaleIntensityRangePercentilesd(keys=["image"], lower=5, upper=95, b_min=0.0, b_max=1.0, clip=True),
+        NormalizeIntensityd(keys=["image"], nonzero=True, channel_wise=True),
         ToTensord(keys=keys),
     ]
 
