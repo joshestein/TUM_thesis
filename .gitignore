@@ -165,3 +165,5 @@ data/
 logs/
 out/
 wandb/
+*.pt
+*.png
