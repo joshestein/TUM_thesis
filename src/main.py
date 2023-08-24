@@ -119,6 +119,7 @@ def main(dataset_name: str):
                 dir=log_dir,
                 tags=("limited_data", "limited_slices"),
                 reinit=True,
+                mode="disabled",
             )
             wandb.config.dataset = dataset_name
             wandb.config.architecture = "UNet"
