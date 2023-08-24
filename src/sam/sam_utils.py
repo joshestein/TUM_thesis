@@ -4,12 +4,13 @@ import cv2
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from scipy.spatial.distance import cdist
 from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 from torch.nn.functional import threshold
 
 
-def get_bounding_box(ground_truth_map: torch.tensor):
+def get_bounding_box(ground_truth_map: torch.tensor) -> list[torch.tensor]:
     # get bounding box from mask
     y_indices, x_indices = torch.where(ground_truth_map > 0)
     x_min, x_max = torch.min(x_indices), torch.max(x_indices)
@@ -23,6 +24,47 @@ def get_bounding_box(ground_truth_map: torch.tensor):
     bbox = [x_min, y_min, x_max, y_max]
 
     return bbox
+
+
+def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> list[int]:
+    # get bounding box from mask
+    y_indices, x_indices = np.where(ground_truth_map > 0)
+    x_min, x_max = np.min(x_indices), np.max(x_indices)
+    y_min, y_max = np.min(y_indices), np.max(y_indices)
+    # add perturbation to bounding box coordinates
+    height, width = ground_truth_map.shape
+    x_min = max(0, x_min - np.random.randint(0, 20))
+    x_max = min(width, x_max + np.random.randint(0, 20))
+    y_min = max(0, y_min - np.random.randint(0, 20))
+    y_max = min(height, y_max + np.random.randint(0, 20))
+    bbox = [x_min, y_min, x_max, y_max]
+
+    return bbox
+
+
+def get_points(onehot_mask: np.ndarray, num_points_to_sample: int) -> np.ndarray:
+    # Sample n points from the ground truth mask.
+    # Assumes the mask is one-hot encoded, and that there are at least n points in the mask.
+    # Samples are chosen in a way that tries to maximize the distance between points
+    nonzero_coords = np.array(np.where(onehot_mask == 1)).T
+
+    # Randomly select the initial point
+    initial_point_idx = np.random.randint(len(nonzero_coords))
+
+    # We flip because np.where returns (y, x) coordinates, but we want (x, y)
+    sampled_points = [np.flip(nonzero_coords[initial_point_idx])]
+    remaining_coords = np.delete(nonzero_coords, initial_point_idx, axis=0)
+
+    while len(sampled_points) < num_points_to_sample:
+        distances = cdist(sampled_points, remaining_coords, metric="euclidean")
+        min_distances = np.min(distances, axis=0)
+        max_min_distance_idx = np.argmax(min_distances)
+
+        new_point = remaining_coords[max_min_distance_idx]
+        sampled_points.append(np.flip(new_point))
+        remaining_coords = np.delete(remaining_coords, max_min_distance_idx, axis=0)
+
+    return np.array(sampled_points)
 
 
 def show_mask(mask, ax, random_color=False):
@@ -110,7 +152,19 @@ def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_cl
     return masks, ground_truths, bboxes, transformed_images
 
 
-def save_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path, num_classes=4):
+def save_figure(
+    index: int,
+    inputs,
+    bboxes,
+    labels,
+    masks,
+    out_dir: Path,
+    num_classes=4,
+    points: list = None,
+    point_labels: list = None,
+):
+    if points is None:
+        points = []
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
     for class_index in range(num_classes):
@@ -123,6 +177,10 @@ def save_figure(index: int, inputs, bboxes, labels, masks, out_dir: Path, num_cl
         box = bboxes[class_index]
         if box is not None:
             show_box(box, plt.gca())
+
+        if len(points) > 0:
+            show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
+
         plt.axis("off")
 
         # Ground truth

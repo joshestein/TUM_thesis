@@ -14,7 +14,8 @@ from torch.utils.data import DataLoader
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
-    get_bounding_box,
+    get_numpy_bounding_box,
+    get_points,
     get_predictions,
     save_figure,
 )
@@ -29,7 +30,12 @@ def setup_sam(root_dir: Path, device: str | torch.device, checkpoint="sam_vit_h_
 
 
 def run_inference(
-    test_loader: DataLoader, predictor: SamPredictor, device: str | torch.device, out_dir: Path, num_classes=4
+    test_loader: DataLoader,
+    predictor: SamPredictor,
+    device: str | torch.device,
+    out_dir: Path,
+    num_sample_points=2,
+    num_classes=4,
 ):
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
@@ -42,18 +48,40 @@ def run_inference(
 
         labels = labels[0].permute(1, 0)  # Swap W, H
 
-        labels_per_class, bboxes, masks = [], [], []
+        labels_per_class, bboxes, masks, points, point_labels = [], [], [], [], []
         for class_index in range(num_classes):
             # Get bounding box for each class of one-hot encoded mask
-            label = (labels == class_index).astype(int)
+            label = np.array((labels == class_index).astype(int))
             labels_per_class.append(label)
 
-            bbox = None if np.count_nonzero(label) == 0 else np.array(get_bounding_box(label))
-            bboxes.append(bbox)
-            mask, _, _ = predictor.predict(box=bbox, multimask_output=False)
-            masks.append(mask)
+            if np.count_nonzero(label) == 0:
+                bbox = None
+                point_coords = None
+                point_label = None
+            else:
+                bbox = get_numpy_bounding_box(label)
+                point_coords = get_points(label, num_sample_points)
+                point_label = np.ones(num_sample_points)
 
-        save_figure(batch_index, inputs, bboxes, labels_per_class, masks, out_dir, num_classes=num_classes)
+            mask, _, _ = predictor.predict(
+                box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
+            )
+            masks.append(mask)
+            bboxes.append(bbox)
+            points.append(point_coords)
+            point_labels.append(point_label)
+
+        save_figure(
+            index=batch_index,
+            inputs=inputs,
+            bboxes=bboxes,
+            labels=labels_per_class,
+            masks=masks,
+            out_dir=out_dir,
+            num_classes=num_classes,
+            points=points,
+            point_labels=point_labels,
+        )
         dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
 
     return torch.tensor(dice_scores)
