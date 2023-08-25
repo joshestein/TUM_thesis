@@ -102,7 +102,7 @@ def get_epoch_loss(
     inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
 
     sam.train()
-    predictions, labels, _, _ = get_predictions(sam=sam, inputs=inputs, labels=labels, num_classes=num_classes)
+    predictions, labels, _, _, _ = get_predictions(sam=sam, inputs=inputs, labels=labels, num_classes=num_classes)
     optimizer.zero_grad()
     loss = loss_function(predictions, labels)
     loss.backward()
@@ -148,6 +148,6 @@ def validate(
 
 def get_validation_loss(val_data: torch.tensor, sam: Sam, loss_function: torch.nn.Module, device: str | torch.device):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-    val_outputs, val_labels, _, _ = get_predictions(sam=sam, inputs=val_inputs, labels=val_labels)
+    val_outputs, val_labels, _, _, _ = get_predictions(sam=sam, inputs=val_inputs, labels=val_labels)
     val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
     return val_loss.item()
