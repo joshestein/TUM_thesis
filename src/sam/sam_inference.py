@@ -15,7 +15,7 @@ from src.sam.sam_utils import (
     calculate_dice_for_classes,
     convert_to_normalized_grayscale,
     get_predictions,
-    get_sam_np_box_and_points,
+    get_sam_bbox_and_points,
     save_figure,
 )
 from src.utils import setup_dirs
@@ -49,7 +49,7 @@ def run_inference(
         labels_per_class = [np.array((labels == class_index).astype(int)) for class_index in range(num_classes)]
 
         for label in labels_per_class:
-            bbox, point_coords, point_label = get_sam_np_box_and_points(label, num_sample_points)
+            bbox, point_coords, point_label = get_sam_bbox_and_points(label, num_sample_points)
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
             )

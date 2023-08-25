@@ -108,7 +108,7 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_sam_np_box_and_points(label, num_sample_points):
+def get_sam_bbox_and_points(label, num_sample_points):
     if np.count_nonzero(label) == 0:
         bbox = None
         point_coords = None
@@ -119,6 +119,8 @@ def get_sam_np_box_and_points(label, num_sample_points):
         point_label = np.ones(num_sample_points)
 
     return bbox, point_coords, point_label
+
+
 def get_predictions(
     sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_points: int, num_classes=4, transform=None
 ):
