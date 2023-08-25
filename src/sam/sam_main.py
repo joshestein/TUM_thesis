@@ -82,6 +82,7 @@ def main(dataset_name: str, num_sample_points: int):
         epochs=epochs,
         device=device,
         out_dir=out_dir,
+        num_sample_points=num_sample_points,
     )
 
 
