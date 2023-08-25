@@ -90,6 +90,7 @@ def run_inference(
 def run_batch_inference(
     test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_sample_points: int, num_classes=4
 ):
+    sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
