@@ -45,13 +45,11 @@ def run_inference(
 
         labels = labels[0].permute(1, 0)  # Swap W, H
 
-        labels_per_class, bboxes, masks, points, point_labels = [], [], [], [], []
-        for class_index in range(num_classes):
-            # Get bounding box for each class of one-hot encoded mask
-            label = np.array((labels == class_index).astype(int))
-            labels_per_class.append(label)
-            bbox, point_coords, point_label = get_sam_np_box_and_points(label, num_sample_points)
+        bboxes, masks, points, point_labels = [], [], [], []
+        labels_per_class = [np.array((labels == class_index).astype(int)) for class_index in range(num_classes)]
 
+        for label in labels_per_class:
+            bbox, point_coords, point_label = get_sam_np_box_and_points(label, num_sample_points)
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
             )
