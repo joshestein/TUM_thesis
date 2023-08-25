@@ -14,9 +14,13 @@ from src.sam.sam_train import train
 from src.utils import get_train_dataloaders, setup_dirs
 
 
-def main(dataset_name: str):
+def main(dataset_name: str, num_sample_points: int):
     root_dir = Path(os.getcwd()).parent.parent
-    data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
+
+    if os.path.exists("/vol/root"):
+        data_dir, log_dir, root_out_dir = setup_dirs(Path("/vol/root"))
+    else:
+        data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
@@ -91,6 +95,12 @@ if __name__ == "__main__":
         type=str,
         default="acdc",
     )
+    parser.add_argument(
+        "--num_sample_points",
+        "-s",
+        type=int,
+        default=2,
+    )
     args = parser.parse_args()
 
-    main(args.dataset)
+    main(args.dataset, args.num_sample_points)
