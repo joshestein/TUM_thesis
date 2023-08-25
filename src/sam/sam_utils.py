@@ -261,7 +261,7 @@ def save_wandb_image(inputs, bboxes, labels, masks):
         if box is not None
     ]
 
-    masks = np.argmax(masks, axis=0)
+    masks = np.argmax(masks, axis=0).squeeze()
     labels = np.argmax(labels, axis=0)
 
     wb_image = wandb.Image(
