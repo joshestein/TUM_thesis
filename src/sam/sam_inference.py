@@ -13,10 +13,9 @@ from torch.utils.data import DataLoader
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
-    get_numpy_bounding_box,
-    get_points,
     convert_to_normalized_grayscale,
     get_predictions,
+    get_sam_np_box_and_points,
     save_figure,
 )
 from src.utils import setup_dirs
@@ -51,15 +50,7 @@ def run_inference(
             # Get bounding box for each class of one-hot encoded mask
             label = np.array((labels == class_index).astype(int))
             labels_per_class.append(label)
-
-            if np.count_nonzero(label) == 0:
-                bbox = None
-                point_coords = None
-                point_label = None
-            else:
-                bbox = get_numpy_bounding_box(label)
-                point_coords = get_points(label, num_sample_points)
-                point_label = np.ones(num_sample_points)
+            bbox, point_coords, point_label = get_sam_np_box_and_points(label, num_sample_points)
 
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
