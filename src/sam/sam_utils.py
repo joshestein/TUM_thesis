@@ -102,7 +102,9 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_predictions(sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_classes=4, transform=None):
+def get_predictions(
+    sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_points: int, num_classes=4, transform=None
+):
     """Given inputs and labels, runs inference on all examples in the batch.
     For each example, returns the predicted masks, ground truth masks, bounding boxes, and transformed images.
 

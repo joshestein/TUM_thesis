@@ -34,7 +34,7 @@ def run_inference(
     predictor: SamPredictor,
     device: str | torch.device,
     out_dir: Path,
-    num_sample_points=2,
+    num_sample_points: int,
     num_classes=4,
 ):
     """Expects the dataloader to have a batch size of 1."""
@@ -87,7 +87,9 @@ def run_inference(
     return torch.tensor(dice_scores)
 
 
-def run_batch_inference(test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_classes=4):
+def run_batch_inference(
+    test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_sample_points: int, num_classes=4
+):
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
@@ -141,6 +143,7 @@ def main(dataset: str, num_sample_points: int):
     figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
     dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir, num_sample_points=num_sample_points)
+    # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Mean foreground dice: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
