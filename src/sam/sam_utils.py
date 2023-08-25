@@ -109,15 +109,10 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_sam_bbox_and_points(label, num_sample_points):
-    if np.count_nonzero(label) == 0:
-        bbox = None
-        point_coords = None
-        point_label = None
-    else:
-        bbox = get_numpy_bounding_box(label)
-        point_coords = get_points(label, num_sample_points)
-        point_label = np.ones(num_sample_points)
+def get_sam_bbox_and_points(label: np.ndarray, num_sample_points: int):
+    bbox = get_numpy_bounding_box(label)
+    point_coords = get_points(label, num_sample_points)
+    point_label = np.ones(num_sample_points)
 
     return bbox, point_coords, point_label
 
@@ -227,12 +222,8 @@ def save_figure(
         # Original input
         plt.subplot(num_classes, 3, (class_index - 1) * 3 + 1)
         plt.imshow(inputs, cmap="gray")
-        box = bboxes[class_index]
-        if box is not None:
-            show_box(box, plt.gca())
-
-        if points is not None and points[class_index] is not None:
-            show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
+        show_box(bboxes[class_index], plt.gca())
+        show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
 
         plt.axis("off")
 
@@ -255,11 +246,7 @@ def save_figure(
 
 def save_wandb_image(inputs, bboxes, labels, masks):
     class_labels = {0: "background", 1: "LV", 2: "MYO", 3: "RV"}
-    box_data = [
-        {"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}}
-        for box in bboxes
-        if box is not None
-    ]
+    box_data = [{"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}} for box in bboxes]
 
     masks = np.argmax(masks, axis=0).squeeze()
     labels = np.argmax(labels, axis=0)
