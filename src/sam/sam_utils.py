@@ -94,9 +94,15 @@ def show_box(box, ax):
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor="green", facecolor=(0, 0, 0, 0), lw=2))  # %%
 
 
-def prepare_image(image, transform, device):
+def convert_to_normalized_grayscale(image):
+    """Convert to grayscale, scale to 0-255, convert to uint8"""
     image = cv2.cvtColor(image.permute(2, 1, 0).cpu().numpy(), cv2.COLOR_GRAY2RGB)
     image = ((image - image.min()) * (1 / (image.max() - image.min()) * 255)).astype("uint8")
+    return image
+
+
+def prepare_image(image, transform, device):
+    image = convert_to_normalized_grayscale(image)
     image = transform.apply_image(image)
     image = torch.as_tensor(image, device=device)
     return image.permute(2, 0, 1).contiguous()

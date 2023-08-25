@@ -2,7 +2,6 @@ import os
 import tomllib
 from pathlib import Path
 
-import cv2
 import numpy as np
 import torch
 from monai.utils import set_determinism
@@ -16,6 +15,7 @@ from src.sam.sam_utils import (
     calculate_dice_for_classes,
     get_numpy_bounding_box,
     get_points,
+    convert_to_normalized_grayscale,
     get_predictions,
     save_figure,
 )
@@ -41,9 +41,7 @@ def run_inference(
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
-        inputs = cv2.cvtColor(inputs.permute(2, 1, 0).detach().cpu().numpy(), cv2.COLOR_GRAY2RGB)
-        # Scale to 0-255, convert to uint8
-        inputs = ((inputs - inputs.min()) * (1 / (inputs.max() - inputs.min()) * 255)).astype("uint8")
+        inputs = convert_to_normalized_grayscale(inputs)
         predictor.set_image(inputs)
 
         labels = labels[0].permute(1, 0)  # Swap W, H
