@@ -114,7 +114,13 @@ def run_batch_inference(
 
 def main(dataset: str, num_sample_points: int):
     root_dir = Path(os.getcwd()).parent.parent
-    data_dir, log_dir, out_dir = setup_dirs(root_dir)
+
+    # External storage should always be prioritized as our data/log/out dir
+    if os.path.exists("/vol/root"):
+        data_dir, log_dir, out_dir = setup_dirs(Path("/vol/root"))
+    else:
+        data_dir, log_dir, out_dir = setup_dirs(root_dir)
+
     out_dir = out_dir / "sam" / f"{dataset}_num_samples_{num_sample_points}"
 
     with open(root_dir / "config.toml", "rb") as file:
