@@ -114,9 +114,10 @@ def run_batch_inference(test_loader: DataLoader, sam: Sam, device: str | torch.d
     return torch.tensor(dice_scores)
 
 
-def main(dataset: str):
+def main(dataset: str, num_sample_points: int):
     root_dir = Path(os.getcwd()).parent.parent
     data_dir, log_dir, out_dir = setup_dirs(root_dir)
+    out_dir = out_dir / "sam" / f"{dataset}_num_samples_{num_sample_points}"
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
@@ -137,9 +138,9 @@ def main(dataset: str):
     test_data = dataset_helper.get_test_dataset()
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    figure_dir = out_dir / "sam" / "figures" / dataset
+    figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
-    dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir)
+    dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Mean foreground dice: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
@@ -155,6 +156,12 @@ if __name__ == "__main__":
         type=str,
         default="acdc",
     )
+    parser.add_argument(
+        "--num_sample_points",
+        "-s",
+        type=int,
+        default=2,
+    )
     args = parser.parse_args()
 
-    main(args.dataset)
+    main(args.dataset, args.num_sample_points)
