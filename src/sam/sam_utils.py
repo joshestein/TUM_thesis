@@ -214,7 +214,7 @@ def save_figure(
     num_classes=4,
     points: list = None,
     point_labels: list | np.ndarray = None,
-    wandb: bool = False,
+    save_to_wandb: bool = False,
 ):
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
@@ -249,7 +249,7 @@ def save_figure(
     plt.savefig(out_dir / f"{index:03d}.png")
     plt.close(fig)
 
-    if wandb:
+    if save_to_wandb:
         save_wandb_image(inputs, bboxes, labels, masks)
 
 
