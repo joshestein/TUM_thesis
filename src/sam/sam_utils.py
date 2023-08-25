@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import wandb
 from matplotlib import pyplot as plt
 from scipy.spatial.distance import cdist
 from segment_anything.modeling import Sam
@@ -213,6 +214,7 @@ def save_figure(
     num_classes=4,
     points: list = None,
     point_labels: list | np.ndarray = None,
+    wandb: bool = False,
 ):
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
@@ -246,6 +248,30 @@ def save_figure(
 
     plt.savefig(out_dir / f"{index:03d}.png")
     plt.close(fig)
+
+    if wandb:
+        save_wandb_image(inputs, bboxes, labels, masks)
+
+
+def save_wandb_image(inputs, bboxes, labels, masks):
+    class_labels = {0: "background", 1: "LV", 2: "MYO", 3: "RV"}
+    box_data = [
+        {"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}}
+        for box in bboxes
+        if box is not None
+    ]
+
+    masks = np.argmax(masks, axis=0)
+    labels = np.argmax(labels, axis=0)
+
+    wb_image = wandb.Image(
+        inputs,
+        masks={
+            "predictions": {"mask_data": masks, "class_labels": class_labels, "box_data": box_data},
+            "ground_truth": {"mask_data": labels, "class_labels": class_labels},
+        },
+    )
+    wandb.log({"sam_inference": wb_image})
 
 
 def calculate_dice_for_classes(masks, labels, ignore_background=True, num_classes=4, eps=1e-6):
