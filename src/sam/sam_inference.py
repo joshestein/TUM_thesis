@@ -113,8 +113,6 @@ def run_batch_inference(
             )
             dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
 
-        break
-
     return torch.tensor(dice_scores)
 
 
