@@ -163,10 +163,10 @@ def save_figure(
     points: list = None,
     point_labels: list = None,
 ):
-    if points is None:
-        points = []
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
+    plt.tight_layout()
+
     for class_index in range(num_classes):
         if class_index == 0:
             continue
