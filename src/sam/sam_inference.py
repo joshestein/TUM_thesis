@@ -40,11 +40,11 @@ def run_inference(
 ):
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
-    for batch_index, batch in enumerate(test_loader):
+    for batch in test_loader:
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         patient = batch["patient"]
 
-        print(f"Predicting index: {batch_index}")
+        print(f"Predicting patient: {patient}")
         inputs = convert_to_normalized_grayscale(inputs)
         predictor.set_image(inputs)
 
@@ -53,7 +53,7 @@ def run_inference(
         bboxes, masks, points, point_labels = [], [], [], []
         labels_per_class = [np.array((labels == class_index).astype(int)) for class_index in range(num_classes)]
         if any(np.count_nonzero(label) == 0 for label in labels_per_class):
-            print(f"Skipping indx{batch_index} as it contains empty labels.")
+            print(f"Skipping {patient} as it contains empty labels.")
             continue
 
         for label in labels_per_class:
