@@ -163,9 +163,24 @@ def get_predictions(
     # batched_output = sam(batched_input, multimask_output=False)
     batched_output = forward(sam, batched_input, multimask_output=False)
 
-    masks, ground_truths, bboxes, transformed_images, points = [], [], [], [], []
+    masks = collate_mask_outputs(batched_output, num_classes)
+    ground_truths, bboxes, points, transformed_images = collate_batch_inputs(batched_input, num_classes)
+
+    return masks, ground_truths, bboxes, points, transformed_images
+
+
+def collate_mask_outputs(batched_output, num_classes: int):
+    masks = []
     for i in range(0, len(batched_output), num_classes):
         collated_masks = [batched_output[i + class_index]["masks"].squeeze() for class_index in range(num_classes)]
+        masks.append(torch.stack(collated_masks))
+
+    return torch.stack(masks)
+
+
+def collate_batch_inputs(batched_input, num_classes: int):
+    ground_truths, bboxes, points, transformed_images = [], [], [], []
+    for i in range(0, len(batched_input), num_classes):
         collated_gts = [batched_input[i + class_index]["gt"] for class_index in range(num_classes)]
         collated_boxes = [
             batched_input[i + class_index]["boxes"][0] if batched_input[i + class_index]["boxes"] is not None else None
@@ -177,16 +192,15 @@ def get_predictions(
             else None
             for class_index in range(num_classes)
         ]
-        masks.append(torch.stack(collated_masks))
         ground_truths.append(np.stack(collated_gts))
         bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         points.append(collated_points)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
-    masks = torch.stack(masks)
     ground_truths = np.stack(ground_truths)
     transformed_images = torch.stack(transformed_images)
-    return masks, ground_truths, bboxes, points, transformed_images
+
+    return ground_truths, bboxes, points, transformed_images
 
 
 def save_figure(
