@@ -178,7 +178,7 @@ def save_figure(
         if box is not None:
             show_box(box, plt.gca())
 
-        if len(points) > 0:
+        if points is not None and points[class_index] is not None:
             show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
 
         plt.axis("off")
