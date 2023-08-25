@@ -178,13 +178,13 @@ def get_predictions(
             for class_index in range(num_classes)
         ]
         masks.append(torch.stack(collated_masks))
-        ground_truths.append(torch.stack(collated_gts))
+        ground_truths.append(np.stack(collated_gts))
         bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         points.append(collated_points)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
     masks = torch.stack(masks)
-    ground_truths = torch.stack(ground_truths)
+    ground_truths = np.stack(ground_truths)
     transformed_images = torch.stack(transformed_images)
     return masks, ground_truths, bboxes, points, transformed_images
 
