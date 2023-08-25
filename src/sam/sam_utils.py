@@ -132,10 +132,14 @@ def get_predictions(
     for index, image in enumerate(inputs):
         ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
         prepared_image = prepare_image(image, transform, sam.device)
+        onehot_labels = [np.array((ground_truth == class_index).astype(int)) for class_index in range(num_classes)]
+
+        if any(np.count_nonzero(label) == 0 for label in onehot_labels):
+            print(f"Skipping index {index} as it contains empty labels.")
+            continue
 
         # Get bounding box for each class of one-hot encoded mask
-        for class_index in range(num_classes):
-            label = np.array((ground_truth == class_index).astype(int))
+        for label in onehot_labels:
             bbox, point, point_labels = get_sam_bbox_and_points(label, num_points)
 
             if bbox is not None:
