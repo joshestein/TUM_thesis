@@ -145,8 +145,12 @@ def main(dataset: str, num_sample_points: int):
     dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir, num_sample_points=num_sample_points)
     # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
-    print(f"Mean foreground dice: {mean_fg_dice}")
+    print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+
+    with open(out_dir / "results.txt", "w", encoding="utf-8") as file:
+        file.write(f"Dice per class: {mean_fg_dice}\n")
+        file.write(f"Mean dice: {torch.mean(mean_fg_dice)}\n")
 
 
 if __name__ == "__main__":
