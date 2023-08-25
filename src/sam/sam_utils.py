@@ -212,7 +212,7 @@ def save_figure(
     out_dir: Path,
     num_classes=4,
     points: list = None,
-    point_labels: list = None,
+    point_labels: list | np.ndarray = None,
 ):
     plt.ioff()
     fig = plt.figure(figsize=(8, 8))
