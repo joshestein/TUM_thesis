@@ -26,7 +26,7 @@ def get_bounding_box(ground_truth_map: torch.tensor) -> list[torch.tensor]:
     return bbox
 
 
-def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> list[int]:
+def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> np.ndarray:
     # get bounding box from mask
     y_indices, x_indices = np.where(ground_truth_map > 0)
     x_min, x_max = np.min(x_indices), np.max(x_indices)
@@ -39,7 +39,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> list[int]:
     y_max = min(height, y_max + np.random.randint(0, 20))
     bbox = [x_min, y_min, x_max, y_max]
 
-    return bbox
+    return np.array(bbox)
 
 
 def get_points(onehot_mask: np.ndarray, num_points_to_sample: int) -> np.ndarray:
