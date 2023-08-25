@@ -1,3 +1,4 @@
+import json
 import os
 import tomllib
 from pathlib import Path
@@ -150,9 +151,13 @@ def main(dataset: str, num_sample_points: int):
     print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
 
-    with open(out_dir / "results.txt", "w", encoding="utf-8") as file:
-        file.write(f"Dice per class: {mean_fg_dice}\n")
-        file.write(f"Mean dice: {torch.mean(mean_fg_dice)}\n")
+    results = {
+        "dice_per_class": mean_fg_dice.tolist(),
+        "mean_dice": torch.mean(mean_fg_dice).item(),
+    }
+
+    with open(out_dir / "results.json", "w", encoding="utf-8") as file:
+        json.dump(results, file, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
