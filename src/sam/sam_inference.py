@@ -83,9 +83,15 @@ def run_batch_inference(
     for batch_index, batch in enumerate(test_loader):
         inputs, labels = batch["image"].to(device), batch["label"].to(device, dtype=torch.uint8)
 
-        masks, labels, boxes, transformed_images = get_predictions(
-            sam=sam, transform=resize_transform, inputs=inputs, labels=labels, num_classes=num_classes
-        )
+        with torch.no_grad():
+            masks, labels, boxes, points, transformed_images = get_predictions(
+                sam=sam,
+                transform=resize_transform,
+                inputs=inputs,
+                labels=labels,
+                num_points=num_sample_points,
+                num_classes=num_classes,
+            )
 
         for i in range(inputs.shape[0]):
             save_figure(
@@ -96,6 +102,8 @@ def run_batch_inference(
                 masks[i],
                 out_dir=out_dir,
                 num_classes=num_classes,
+                points=points[i],
+                point_labels=np.ones(num_sample_points) * len(points),
             )
             dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
 
