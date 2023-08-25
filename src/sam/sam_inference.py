@@ -50,6 +50,9 @@ def run_inference(
 
         bboxes, masks, points, point_labels = [], [], [], []
         labels_per_class = [np.array((labels == class_index).astype(int)) for class_index in range(num_classes)]
+        if any(np.count_nonzero(label) == 0 for label in labels_per_class):
+            print(f"Skipping indx{batch_index} as it contains empty labels.")
+            continue
 
         for label in labels_per_class:
             bbox, point_coords, point_label = get_sam_bbox_and_points(label, num_sample_points)
