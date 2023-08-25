@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import wandb
 from monai.utils import set_determinism
 from segment_anything import sam_model_registry, SamPredictor
 from segment_anything.modeling import Sam
@@ -40,6 +41,7 @@ def run_inference(
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
+        print(f"Predicting index: {batch_index}")
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         inputs = convert_to_normalized_grayscale(inputs)
         predictor.set_image(inputs)
@@ -114,7 +116,14 @@ def run_batch_inference(
 
 
 def main(dataset: str, num_sample_points: int):
-    root_dir = Path(os.getcwd()).parent.parent
+    wandb.init(
+        project=f"sam_inference",
+        name=f"{dataset}_num_samples_{num_sample_points}",
+        config={"dataset": dataset, "num_sample_points": num_sample_points},
+    )
+
+    print(f"Starting inference for {dataset}...")
+    root_dir = Path(os.getcwd())
 
     # External storage should always be prioritized as our data/log/out dir
     if os.path.exists("/vol/root"):
@@ -150,6 +159,9 @@ def main(dataset: str, num_sample_points: int):
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+
+    wandb.log({"dice_per_class": mean_fg_dice.tolist()})
+    wandb.log({"mean_dice": torch.mean(mean_fg_dice)})
 
     results = {
         "dice_per_class": mean_fg_dice.tolist(),
