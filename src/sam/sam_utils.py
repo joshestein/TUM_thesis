@@ -204,7 +204,7 @@ def collate_batch_inputs(batched_input, num_classes: int):
 
 
 def save_figure(
-    index: int,
+    patient_name: str,
     inputs,
     bboxes,
     labels,
@@ -241,7 +241,7 @@ def save_figure(
         show_mask(masks[class_index], plt.gca())
         plt.axis("off")
 
-    plt.savefig(out_dir / f"{index:03d}.png")
+    plt.savefig(out_dir / f"{patient_name}.png")
     plt.close(fig)
 
     if save_to_wandb:

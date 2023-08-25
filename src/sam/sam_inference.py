@@ -41,8 +41,10 @@ def run_inference(
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
-        print(f"Predicting index: {batch_index}")
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
+        patient = batch["patient"]
+
+        print(f"Predicting index: {batch_index}")
         inputs = convert_to_normalized_grayscale(inputs)
         predictor.set_image(inputs)
 
@@ -65,7 +67,7 @@ def run_inference(
             point_labels.append(point_label)
 
         save_figure(
-            index=batch_index,
+            patient_name=patient,
             inputs=inputs,
             bboxes=bboxes,
             labels=labels_per_class,
@@ -88,6 +90,7 @@ def run_batch_inference(
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
         inputs, labels = batch["image"].to(device), batch["label"].to(device, dtype=torch.uint8)
+        patient = batch["patient"]
 
         with torch.no_grad():
             masks, labels, boxes, points, transformed_images = get_predictions(
@@ -101,7 +104,7 @@ def run_batch_inference(
 
         for i in range(inputs.shape[0]):
             save_figure(
-                batch_index,
+                patient,
                 transformed_images[i],
                 boxes[i],
                 labels[i],
