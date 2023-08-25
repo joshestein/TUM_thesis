@@ -29,8 +29,8 @@ class MNMsDataset(Dataset):
     def _get_cardiac_phase_indexes(self):
         """Reads the CSV metadata file to extract the end diastole and end systole frames for each volume.
 
-        :returns A nested dictionary, where outer keys are patient folder names and inner keys are "end_diastole" and "end_systole",
-        i.e. {"patient_name": {"end_diastole": 0, "end_systole": 12}}
+        :returns A nested dictionary, where outer keys are patient folder names and inner keys are "end_diastole" and
+        "end_systole", i.e. {"patient_name": {"end_diastole": 0, "end_systole": 12}}
         """
         csv_file = "211230_M&Ms_Dataset_information_diagnosis_opendataset.csv"
         root_dir = self._get_root_dir(csv_file)
@@ -65,19 +65,20 @@ class MNMsDataset(Dataset):
         return len(self.patients)
 
     def __getitem__(self, index):
-        patient = self.patients[index]
+        patient_dir = self.patients[index]
+        patient = patient_dir.name
 
-        image = nib.load(patient / f"{patient.name}_sa.nii.gz")
-        label = nib.load(patient / f"{patient.name}_sa_gt.nii.gz")
+        image = nib.load(patient_dir / f"{patient}_sa.nii.gz")
+        label = nib.load(patient_dir / f"{patient}_sa_gt.nii.gz")
         image = image.get_fdata(dtype=np.float32)
         label = label.get_fdata(dtype=np.float32)
 
         randomized_phase = np.random.choice(["end_diastole", "end_systole"])
 
-        image = image[..., self.cardiac_phase_indexes[patient.name][randomized_phase]]
-        label = label[..., self.cardiac_phase_indexes[patient.name][randomized_phase]]
+        image = image[..., self.cardiac_phase_indexes[patient][randomized_phase]]
+        label = label[..., self.cardiac_phase_indexes[patient][randomized_phase]]
 
-        sample = {"image": image, "label": label}
+        sample = {"image": image, "label": label, "patient": patient}
 
         if self.transform:
             sample = self.transform(sample)

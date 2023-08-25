@@ -42,7 +42,11 @@ class ACDCDataset(Dataset):
         image = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}.nii.gz")
         label = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}_gt.nii.gz")
 
-        sample = {"image": image.get_fdata(dtype=np.float32), "label": label.get_fdata(dtype=np.float32)}
+        sample = {
+            "image": image.get_fdata(dtype=np.float32),
+            "label": label.get_fdata(dtype=np.float32),
+            "patient": patient,
+        }
 
         if self.full_volume:
             original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
