@@ -20,10 +20,8 @@ def train(
     epochs: int,
     device: str | torch.device,
     out_dir: str | os.PathLike,
+    num_sample_points: int,
 ):
-    # Freeze image encoder and prompt encoder
-    # NB NB NB
-    # You need to remote the decorator @torch.no_grad() within the forward method of sam.py
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
 
@@ -51,6 +49,7 @@ def train(
                 sam=sam,
                 loss_function=loss_function,
                 device=device,
+                num_sample_points=num_sample_points,
             )
 
             epoch_loss += loss
@@ -97,12 +96,15 @@ def get_epoch_loss(
     sam: Sam,
     loss_function: torch.nn.Module,
     device: str | torch.device,
+    num_sample_points: int,
     num_classes: int = 4,
 ):
     inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
 
     sam.train()
-    predictions, labels, _, _, _ = get_predictions(sam=sam, inputs=inputs, labels=labels, num_classes=num_classes)
+    predictions, labels, _, _, _ = get_predictions(
+        sam=sam, inputs=inputs, labels=labels, num_points=num_sample_points, num_classes=num_classes
+    )
     optimizer.zero_grad()
     loss = loss_function(predictions, labels)
     loss.backward()
@@ -117,6 +119,7 @@ def validate(
     device: str | torch.device,
     loss_function: torch.nn.Module,
     metric_values,
+    num_sample_points: int,
 ):
     sam.eval()
     with torch.no_grad():
@@ -126,7 +129,11 @@ def validate(
             step += 1
 
             validation_loss += get_validation_loss(
-                val_data=val_data, sam=sam, loss_function=loss_function, device=device
+                val_data=val_data,
+                sam=sam,
+                loss_function=loss_function,
+                device=device,
+                num_sample_points=num_sample_points,
             )
 
         validation_loss /= step
@@ -146,8 +153,14 @@ def validate(
             wandb.log({f"validation_{name}": metric_value})
 
 
-def get_validation_loss(val_data: torch.tensor, sam: Sam, loss_function: torch.nn.Module, device: str | torch.device):
+def get_validation_loss(
+    val_data: torch.tensor, sam: Sam, loss_function: torch.nn.Module, device: str | torch.device, num_sample_points: int
+):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-    val_outputs, val_labels, _, _, _ = get_predictions(sam=sam, inputs=val_inputs, labels=val_labels)
-    val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
+    val_outputs, val_labels, _, _, _ = get_predictions(
+        sam=sam, inputs=val_inputs, labels=val_labels, num_points=num_sample_points
+    )
+    val_loss = compute_val_loss_and_metrics(
+        inputs=val_inputs, outputs=val_outputs, labels=val_labels, loss_function=loss_function
+    )
     return val_loss.item()
