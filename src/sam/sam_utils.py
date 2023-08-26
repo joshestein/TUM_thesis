@@ -253,9 +253,8 @@ def save_wandb_image(inputs, bboxes, labels, masks):
     box_data = [{"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}} for box in bboxes]
 
     labels = np.argmax(labels, axis=0)
-    mask_data = np.zeros((inputs.shape[0], inputs.shape[1]), dtype=int)
-    for i, mask in enumerate(masks):
-        mask_data[mask[0]] = i
+    int_masks = [mask[0].astype(int) * i for i, mask in enumerate(masks)]
+    mask_data = np.argmax(int_masks, axis=0)
 
     wb_image = wandb.Image(
         inputs,
