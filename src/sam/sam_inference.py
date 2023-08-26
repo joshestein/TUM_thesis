@@ -42,7 +42,7 @@ def run_inference(
     dice_scores = []
     for batch in test_loader:
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
-        patient = batch["patient"]
+        patient = batch["patient"][0]
 
         print(f"Predicting patient: {patient}")
         inputs = convert_to_normalized_grayscale(inputs)
