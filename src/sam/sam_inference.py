@@ -128,6 +128,8 @@ def main(dataset: str, num_sample_points: int, use_bboxes: bool):
         project=f"sam_inference",
         name=f"{dataset}_num_samples_{num_sample_points}",
         config={"dataset": dataset, "num_sample_points": num_sample_points},
+        mode="disabled",
+        reinit=True,
     )
 
     print(f"Starting inference for {dataset}...")
