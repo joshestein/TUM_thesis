@@ -124,7 +124,6 @@ def main(dataset_name: str):
             )
             wandb.config.dataset = dataset_name
             wandb.config.architecture = "UNet"
-            wandb.config.loss = loss
 
             out_dir = (
                 root_out_dir

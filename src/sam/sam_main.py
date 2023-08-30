@@ -67,7 +67,6 @@ def main(dataset_name: str, num_sample_points: int):
         dir=log_dir,
     )
     wandb.config.dataset = dataset_name
-    wandb.config.loss = loss
 
     train(
         sam=sam,
