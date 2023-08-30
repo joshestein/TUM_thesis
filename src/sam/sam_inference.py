@@ -16,8 +16,9 @@ from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
     convert_to_normalized_grayscale,
-    get_sam_bbox_and_points,
     get_batch_predictions,
+    get_numpy_bounding_box,
+    get_sam_points,
     save_figure,
 )
 from src.utils import setup_dirs
@@ -36,6 +37,8 @@ def run_inference(
     device: str | torch.device,
     out_dir: Path,
     num_sample_points: int,
+    use_bboxes: bool = True,
+    use_points: bool = True,
     num_classes=4,
 ):
     """Expects the dataloader to have a batch size of 1."""
@@ -57,7 +60,8 @@ def run_inference(
             continue
 
         for label in labels_per_class:
-            bbox, point_coords, point_label = get_sam_bbox_and_points(label, num_sample_points)
+            bbox = get_numpy_bounding_box(label) if use_bboxes else None
+            point_coords, point_label = get_sam_points(label, num_sample_points) if use_points else (None, None)
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
             )

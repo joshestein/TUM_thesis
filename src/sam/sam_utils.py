@@ -109,12 +109,11 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_sam_bbox_and_points(label: np.ndarray, num_sample_points: int):
-    bbox = get_numpy_bounding_box(label)
+def get_sam_points(label: np.ndarray, num_sample_points: int):
     point_coords = get_points(label, num_sample_points)
     point_label = np.ones(num_sample_points)
 
-    return bbox, point_coords, point_label
+    return point_coords, point_label
 
 
 def get_batch_predictions(
@@ -140,7 +139,8 @@ def get_batch_predictions(
 
         # Get bounding box for each class of one-hot encoded mask
         for label in onehot_labels:
-            bbox, point, point_labels = get_sam_bbox_and_points(label, num_points)
+            bbox = get_numpy_bounding_box(label)
+            point, point_labels = get_sam_points(label, num_points)
 
             if bbox is not None:
                 bbox = transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
