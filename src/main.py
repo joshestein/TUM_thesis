@@ -64,7 +64,7 @@ def main(dataset_name: str):
         # channels=(26, 52, 104, 208, 416),
         channels=(16, 32, 64, 128, 256),
         strides=(2, 2, 2, 2),
-        norm=Norm.BATCH,
+        norm=Norm.INSTANCE,
         num_res_units=4,
         dropout=0.5,
     ).to(device)
