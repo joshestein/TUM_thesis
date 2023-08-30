@@ -6,7 +6,7 @@ from segment_anything.modeling import Sam
 from torch.utils.data import DataLoader
 
 from src.metrics import METRICS
-from src.sam.sam_utils import get_predictions
+from src.sam.sam_utils import get_batch_predictions
 from src.train import compute_val_loss_and_metrics
 
 
@@ -102,7 +102,7 @@ def get_epoch_loss(
     inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
 
     sam.train()
-    predictions, labels, _, _, _ = get_predictions(
+    predictions, labels, _, _, _ = get_batch_predictions(
         sam=sam, inputs=inputs, labels=labels, num_points=num_sample_points, num_classes=num_classes
     )
     optimizer.zero_grad()
@@ -157,7 +157,7 @@ def get_validation_loss(
     val_data: torch.tensor, sam: Sam, loss_function: torch.nn.Module, device: str | torch.device, num_sample_points: int
 ):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-    val_outputs, val_labels, _, _, _ = get_predictions(
+    val_outputs, val_labels, _, _, _ = get_batch_predictions(
         sam=sam, inputs=val_inputs, labels=val_labels, num_points=num_sample_points
     )
     val_loss = compute_val_loss_and_metrics(

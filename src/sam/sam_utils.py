@@ -117,7 +117,7 @@ def get_sam_bbox_and_points(label: np.ndarray, num_sample_points: int):
     return bbox, point_coords, point_label
 
 
-def get_predictions(
+def get_batch_predictions(
     sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_points: int, num_classes=4, transform=None
 ):
     """Given inputs and labels, runs inference on all examples in the batch.

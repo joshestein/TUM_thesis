@@ -16,8 +16,8 @@ from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
     convert_to_normalized_grayscale,
-    get_predictions,
     get_sam_bbox_and_points,
+    get_batch_predictions,
     save_figure,
 )
 from src.utils import setup_dirs
@@ -93,7 +93,7 @@ def run_batch_inference(
         patient = batch["patient"]
 
         with torch.no_grad():
-            masks, labels, boxes, points, transformed_images = get_predictions(
+            masks, labels, boxes, points, transformed_images = get_batch_predictions(
                 sam=sam,
                 transform=resize_transform,
                 inputs=inputs,
