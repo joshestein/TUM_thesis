@@ -3,6 +3,7 @@ augment = true
 batch_size = 8
 epochs = 300
 learning_rate = 1e-6
+loss = "dice" # "dice" or "dice_ce"
 percentage_data = 1.0
 seed = 42
 spatial_dimensions = 2

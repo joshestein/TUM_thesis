@@ -30,6 +30,7 @@ def main(dataset_name: str, num_sample_points: int):
     batch_size = config["hyperparameters"].get("batch_size", 4)
     epochs = config["hyperparameters"].get("epochs", 100)
     learning_rate = config["hyperparameters"].get("learning_rate", 1e-5)
+    loss = config["hyperparameters"].get("loss", "dice")
     spatial_dims = config["hyperparameters"].get("spatial_dimensions", 3)
     validation_split = config["hyperparameters"].get("validation_split", 0.8)
 
@@ -39,7 +40,7 @@ def main(dataset_name: str, num_sample_points: int):
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    loss = "dice"
+
     if loss == "dice":
         loss_function = DiceLoss(to_onehot_y=False, softmax=False)
     elif loss == "dice_ce":
