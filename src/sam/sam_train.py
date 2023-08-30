@@ -5,7 +5,7 @@ import wandb
 from segment_anything.modeling import Sam
 from torch.utils.data import DataLoader
 
-from src.metrics import METRICS
+from src.metrics import aggregate_validation_metrics
 from src.sam.sam_utils import get_batch_predictions
 from src.train import compute_val_loss_and_metrics
 
@@ -140,17 +140,7 @@ def validate(
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
 
-        for name, metric in METRICS.items():
-            # aggregate and reset metrics
-            metric_value = metric.aggregate()
-            metric_value = metric_value.item() if len(metric_value) == 1 else metric_value.tolist()
-            metric.reset()
-
-            if name not in metric_values:
-                metric_values[name] = []
-
-            metric_values[name].append(metric_value)
-            wandb.log({f"validation_{name}": metric_value})
+        aggregate_validation_metrics(metric_values=metric_values)
 
 
 def get_validation_loss(
