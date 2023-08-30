@@ -78,6 +78,10 @@ def find_optimal_learning_rate(
 
 
 def setup_dirs(root_dir: Path):
+    # Always prefer external storage to internal storage
+    if os.path.exists("/vol/root"):
+        root_dir = Path("/vol/root")
+
     data_dir = root_dir / "data"
     log_dir = root_dir / "logs"
     out_dir = root_dir / "out"
