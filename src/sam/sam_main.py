@@ -15,7 +15,7 @@ from src.utils import get_train_dataloaders, setup_dirs
 
 
 def main(dataset_name: str, num_sample_points: int):
-    root_dir = Path(os.getcwd()).parent.parent
+    root_dir = Path(os.getcwd())
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
     with open(root_dir / "config.toml", "rb") as file:
