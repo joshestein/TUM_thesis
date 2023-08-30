@@ -123,7 +123,7 @@ def run_batch_inference(
     return torch.tensor(dice_scores)
 
 
-def main(dataset: str, num_sample_points: int):
+def main(dataset: str, num_sample_points: int, use_bboxes: bool):
     wandb.init(
         project=f"sam_inference",
         name=f"{dataset}_num_samples_{num_sample_points}",
@@ -162,7 +162,9 @@ def main(dataset: str, num_sample_points: int):
 
     figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
-    dice_scores = run_inference(test_loader, SamPredictor(sam), device, figure_dir, num_sample_points=num_sample_points)
+    dice_scores = run_inference(
+        test_loader, SamPredictor(sam), device, figure_dir, use_bboxes=use_bboxes, num_sample_points=num_sample_points
+    )
     # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Dice per class: {mean_fg_dice}")
@@ -196,6 +198,14 @@ if __name__ == "__main__":
         type=int,
         default=2,
     )
+    parser.add_argument(
+        "--use_bboxes",
+        "-b",
+        type=bool,
+        default=True,
+    )
     args = parser.parse_args()
 
-    main(args.dataset, args.num_sample_points)
+    for dataset in ["acdc", "mnms"]:
+        for num_points in [2, 3, 5]:
+            main(dataset, num_points, args.use_bboxes)
