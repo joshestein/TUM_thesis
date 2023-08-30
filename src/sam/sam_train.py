@@ -67,6 +67,7 @@ def train(
                 device=device,
                 loss_function=loss_function,
                 metric_values=metric_values,
+                num_sample_points=num_sample_points,
             )
 
             dice_metric = metric_values["dice_with_background"][-1]
