@@ -138,6 +138,9 @@ def validate(
                 num_sample_points=num_sample_points,
             )
 
+            if validation_loss == -1:
+                continue
+
         validation_loss /= step
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
@@ -157,6 +160,10 @@ def get_validation_loss(
     val_outputs, val_labels, _, _, _ = get_batch_predictions(
         sam=sam, inputs=val_inputs, labels=val_labels, num_points=num_sample_points
     )
+
+    if val_outputs == [] and val_labels == []:
+        return -1
+
     val_loss = compute_val_loss_and_metrics(
         inputs=val_inputs,
         outputs=val_outputs,
