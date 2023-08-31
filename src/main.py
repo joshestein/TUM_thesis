@@ -12,6 +12,7 @@ from monai.networks.nets import UNet
 from monai.utils import set_determinism
 
 from src.datasets.dataset_helper import DatasetHelperFactory
+from src.metrics import MetricHandler
 from src.train import train
 from src.utils import find_optimal_learning_rate, get_train_dataloaders, setup_dirs
 
@@ -134,6 +135,7 @@ def main(dataset_name: str):
             )
             os.makedirs(out_dir, exist_ok=True)
 
+            metric_handler = MetricHandler("dice_with_background")
             _, _ = train(
                 model=model,
                 train_loader=train_loader,
@@ -144,6 +146,7 @@ def main(dataset_name: str):
                 epochs=epochs,
                 device=device,
                 out_dir=out_dir,
+                metric_handler=metric_handler,
             )
 
             wandb.finish()
