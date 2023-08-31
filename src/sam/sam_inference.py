@@ -80,6 +80,7 @@ def run_inference(
             num_classes=num_classes,
             points=points,
             point_labels=point_labels,
+            save_to_wandb=True,
         )
         dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
 
@@ -117,6 +118,7 @@ def run_batch_inference(
                 num_classes=num_classes,
                 points=points[i],
                 point_labels=np.ones(num_sample_points) * len(points),
+                save_to_wandb=True,
             )
             dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
 
