@@ -62,9 +62,7 @@ def main(dataset_name: str, num_sample_points: int):
     os.makedirs(out_dir, exist_ok=True)
 
     wandb.init(
-        project=f"sam_{dataset_name}",
-        config=config["hyperparameters"],
-        dir=log_dir,
+        project=f"sam_{dataset_name}", config=config["hyperparameters"], dir=log_dir, mode="disabled", reinit=True
     )
     wandb.config.dataset = dataset_name
 
