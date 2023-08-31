@@ -192,12 +192,12 @@ def collate_batch_inputs(batched_input, num_classes: int):
             else None
             for class_index in range(num_classes)
         ]
-        ground_truths.append(np.stack(collated_gts))
+        ground_truths.append(torch.stack(collated_gts))
         bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         points.append(collated_points)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
-    ground_truths = np.stack(ground_truths)
+    ground_truths = torch.stack(ground_truths)
     transformed_images = torch.stack(transformed_images)
 
     return ground_truths, bboxes, points, transformed_images
