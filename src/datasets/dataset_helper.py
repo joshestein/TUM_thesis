@@ -81,7 +81,7 @@ class ACDCDatasetHelper(DatasetHelper):
 class MNMsDatasetHelper(DatasetHelper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data_dir = self.data_dir / "M&Ms" / "OpenDataset"
+        self.data_dir = self.data_dir / "MNMs"
 
     def get_training_datasets(self):
         data_dir = self.data_dir / "Training" / "Labeled"
