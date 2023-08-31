@@ -163,6 +163,9 @@ def get_batch_predictions(
                 }
             )
 
+    if not batched_input:
+        return [], [], [], [], []
+
     # TODO: the gradients are disabled in Sam with the decorator @torch.no_grad
     # batched_output = sam(batched_input, multimask_output=False)
     batched_output = forward(sam, batched_input, multimask_output=False)

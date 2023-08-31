@@ -52,6 +52,9 @@ def train(
                 num_sample_points=num_sample_points,
             )
 
+            if loss == -1:
+                continue
+
             epoch_loss += loss
             print(f"{step}/{len(train_loader.dataset) // train_loader.batch_size}, " f"train_loss: {loss:.4f}")
 
@@ -106,6 +109,10 @@ def get_epoch_loss(
     predictions, labels, _, _, _ = get_batch_predictions(
         sam=sam, inputs=inputs, labels=labels, num_points=num_sample_points, num_classes=num_classes
     )
+    if predictions == [] and labels == []:
+        # Empty batch due to all labels being incomplete
+        return -1
+
     optimizer.zero_grad()
     loss = loss_function(predictions, labels)
     loss.backward()
