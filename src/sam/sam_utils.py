@@ -89,7 +89,7 @@ def show_points(coords, labels, ax, marker_size=375):
 
 
 def show_box(box, ax):
-    if any(v is None for v in box):
+    if not box or any(v is None for v in box):
         return
 
     x0, y0 = box[0], box[1]
