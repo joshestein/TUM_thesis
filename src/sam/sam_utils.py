@@ -259,7 +259,11 @@ def save_figure(
 
 def save_wandb_image(inputs, bboxes, labels, masks):
     class_labels = {0: "background", 1: "LV", 2: "MYO", 3: "RV"}
-    box_data = [{"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}} for box in bboxes]
+    box_data = [
+        {"position": {"minX": box[0], "minY": box[1], "maxX": box[2], "maxY": box[3]}}
+        for box in bboxes
+        if box is not None
+    ]
 
     labels = np.argmax(labels, axis=0)
     int_masks = [mask[0].astype(int) * i for i, mask in enumerate(masks)]
