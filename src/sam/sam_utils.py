@@ -131,16 +131,19 @@ def get_batch_predictions(
     for index, image in enumerate(inputs):
         ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
         prepared_image = prepare_image(image, transform, sam.device)
-        onehot_labels = [np.array((ground_truth == class_index).astype(int)) for class_index in range(num_classes)]
+        onehot_labels = [
+            torch.as_tensor((ground_truth == class_index), dtype=torch.int, device=sam.device)
+            for class_index in range(num_classes)
+        ]
 
-        if any(np.count_nonzero(label) == 0 for label in onehot_labels):
+        if any(torch.count_nonzero(label) == 0 for label in onehot_labels):
             print(f"Skipping index {index} as it contains empty labels.")
             continue
 
         # Get bounding box for each class of one-hot encoded mask
         for label in onehot_labels:
-            bbox = get_numpy_bounding_box(label)
-            point, point_labels = get_sam_points(label, num_points)
+            bbox = get_bounding_box(label)
+            point, point_labels = get_sam_points(label.cpu().numpy(), num_points)
 
             if bbox is not None:
                 bbox = transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
