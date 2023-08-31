@@ -150,6 +150,7 @@ def get_batch_predictions(
             if point is not None:
                 point = transform.apply_coords_torch(torch.as_tensor(point, device=sam.device), image.shape[1:])
                 point_labels = torch.as_tensor(point_labels, device=sam.device)
+                point, point_labels = point.unsqueeze(0), point_labels.unsqueeze(0)
 
             batched_input.append(
                 {
