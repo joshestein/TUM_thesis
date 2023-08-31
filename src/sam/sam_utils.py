@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 from scipy.spatial.distance import cdist
 from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
-from torch.nn.functional import threshold
 
 
 def get_bounding_box(ground_truth_map: torch.tensor) -> list[torch.tensor]:
@@ -330,8 +329,12 @@ def forward(sam: Sam, batched_input: list[dict[str, any]], multimask_output=Fals
             input_size=image_record["image"].shape[-2:],
             original_size=image_record["original_size"],
         )
-        masks = threshold(masks, sam.mask_threshold, 0)
+        # masks = threshold(masks, sam.mask_threshold, 0)
         # masks = masks > sam.mask_threshold
+        # Don't threshold, it's not differentiable.
+        # It makes sense for prediction, but not for training.
+        # TODO: should this be softmax?
+        masks = torch.sigmoid(masks)
         outputs.append(
             {
                 "masks": masks,
