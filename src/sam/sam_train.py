@@ -5,7 +5,7 @@ import wandb
 from segment_anything.modeling import Sam
 from torch.utils.data import DataLoader
 
-from src.metrics import aggregate_validation_metrics
+from src.metrics import MetricHandler
 from src.sam.sam_utils import get_batch_predictions
 from src.train import compute_val_loss_and_metrics
 
@@ -21,17 +21,12 @@ def train(
     device: str | torch.device,
     out_dir: str | os.PathLike,
     num_sample_points: int,
+    metric_handler: MetricHandler,
 ):
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
 
-    best_metric = -1
-    best_metric_epoch = -1
-
     epoch_loss_values = []
-    metric_values: dict[
-        str, list[float] | list[list[float]]
-    ] = {}  # For each metric, store a list of values one for each validation epoch
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=10, verbose=True)
 
@@ -69,29 +64,27 @@ def train(
                 val_loader=val_loader,
                 device=device,
                 loss_function=loss_function,
-                metric_values=metric_values,
                 num_sample_points=num_sample_points,
+                metric_handler=metric_handler,
             )
 
-            dice_metric = metric_values["dice_with_background"][-1]
-            if dice_metric > best_metric:
-                best_metric = dice_metric
-                best_metric_epoch = epoch + 1
+            dice_metric = metric_handler.last_value()
+            if metric_handler.check_best_metric(epoch + 1):
                 torch.save(
                     sam.state_dict(),
                     os.path.join(out_dir, "best_metric_model.pth"),
                 )
-                print(f"New best metric found: {best_metric}")
+                print(f"New best metric found: {metric_handler.best_metric}")
 
             print(
                 f"current epoch: {epoch + 1} current mean dice: {dice_metric:.4f}"
-                f"\nbest mean dice: {best_metric:.4f} "
-                f"at epoch: {best_metric_epoch}"
+                f"\nbest mean dice: {metric_handler.best_metric:.4f} "
+                f"at epoch: {metric_handler.best_epoch}"
             )
 
         scheduler.step(epoch_loss)
 
-    return epoch_loss_values, metric_values
+    return epoch_loss_values
 
 
 def get_epoch_loss(
@@ -126,7 +119,7 @@ def validate(
     val_loader: DataLoader,
     device: str | torch.device,
     loss_function: torch.nn.Module,
-    metric_values,
+    metric_handler: MetricHandler,
     num_sample_points: int,
 ):
     sam.eval()
@@ -141,6 +134,7 @@ def validate(
                 sam=sam,
                 loss_function=loss_function,
                 device=device,
+                metric_handler=metric_handler,
                 num_sample_points=num_sample_points,
             )
 
@@ -148,17 +142,26 @@ def validate(
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
 
-        aggregate_validation_metrics(metric_values=metric_values)
+        metric_handler.aggregate_and_reset_metrics()
 
 
 def get_validation_loss(
-    val_data: torch.tensor, sam: Sam, loss_function: torch.nn.Module, device: str | torch.device, num_sample_points: int
+    val_data: torch.tensor,
+    sam: Sam,
+    loss_function: torch.nn.Module,
+    device: str | torch.device,
+    metric_handler: MetricHandler,
+    num_sample_points: int,
 ):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
     val_outputs, val_labels, _, _, _ = get_batch_predictions(
         sam=sam, inputs=val_inputs, labels=val_labels, num_points=num_sample_points
     )
     val_loss = compute_val_loss_and_metrics(
-        inputs=val_inputs, outputs=val_outputs, labels=val_labels, loss_function=loss_function
+        inputs=val_inputs,
+        outputs=val_outputs,
+        labels=val_labels,
+        loss_function=loss_function,
+        metric_handler=metric_handler,
     )
     return val_loss.item()

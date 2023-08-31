@@ -7,7 +7,7 @@ from monai.data import decollate_batch
 from monai.transforms import Activations, AsDiscrete, Compose
 from torch.utils.data import DataLoader
 
-from src.metrics import aggregate_validation_metrics, METRICS
+from src.metrics import MetricHandler
 from src.models.early_stopper import EarlyStopper
 
 
@@ -21,16 +21,10 @@ def train(
     epochs: int,
     device: str | torch.device,
     out_dir: str | os.PathLike,
+    metric_handler: MetricHandler,
     early_stopper: Optional[EarlyStopper] = None,
 ):
-    best_metric = -1
-    best_metric_epoch = -1
-
     epoch_loss_values = []
-    metric_values: dict[
-        str, list[float] | list[list[float]]
-    ] = {}  # For each metric, store a list of values one for each validation epoch
-
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=10, verbose=True)
 
     for epoch in range(epochs):
@@ -63,25 +57,23 @@ def train(
                 val_loader=val_loader,
                 device=device,
                 loss_function=loss_function,
-                metric_values=metric_values,
+                metric_handler=metric_handler,
             )
 
-            dice_metric = metric_values["dice_with_background"][-1]
+            dice_metric = metric_handler.last_value()
             early_stopper.check_early_stop(dice_metric) if early_stopper else None
 
-            if dice_metric > best_metric:
-                best_metric = dice_metric
-                best_metric_epoch = epoch + 1
+            if metric_handler.check_best_metric(epoch + 1):
                 torch.save(
                     model.state_dict(),
                     os.path.join(out_dir, "best_metric_model.pth"),
                 )
-                print(f"New best metric found: {best_metric}")
+                print(f"New best metric found: {metric_handler.best_metric}")
 
             print(
                 f"current epoch: {epoch + 1} current mean dice: {dice_metric:.4f}"
-                f"\nbest mean dice: {best_metric:.4f} "
-                f"at epoch: {best_metric_epoch}"
+                f"\nbest mean dice: {metric_handler.best_metric:.4f} "
+                f"at epoch: {metric_handler.best_epoch}"
             )
 
         scheduler.step(epoch_loss)
@@ -90,7 +82,7 @@ def train(
             print("Early stop")
             break
 
-    return epoch_loss_values, metric_values
+    return epoch_loss_values
 
 
 def validate(
@@ -98,7 +90,7 @@ def validate(
     val_loader: DataLoader,
     device: str | torch.device,
     loss_function: torch.nn.Module,
-    metric_values,
+    metric_handler: MetricHandler,
 ):
     model.eval()
     with torch.no_grad():
@@ -108,14 +100,18 @@ def validate(
             step += 1
 
             validation_loss += get_validation_loss(
-                val_data=val_data, model=model, loss_function=loss_function, device=device
+                val_data=val_data,
+                model=model,
+                loss_function=loss_function,
+                device=device,
+                metric_handler=metric_handler,
             )
 
         validation_loss /= step
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
 
-        aggregate_validation_metrics(metric_values=metric_values)
+        metric_handler.aggregate_and_reset_metrics()
 
 
 def get_epoch_loss(
@@ -151,6 +147,7 @@ def get_validation_loss(
     model: torch.nn.Module,
     loss_function: torch.nn.Module,
     device: str | torch.device,
+    metric_handler: MetricHandler,
 ):
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
     val_outputs = model(val_inputs)
@@ -160,12 +157,18 @@ def get_validation_loss(
         val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
         val_labels = val_labels.permute(0, 1, 3, 4, 2)
 
-    val_loss = compute_val_loss_and_metrics(outputs=val_outputs, labels=val_labels, loss_function=loss_function)
+    val_loss = compute_val_loss_and_metrics(
+        inputs=val_inputs,
+        outputs=val_outputs,
+        labels=val_labels,
+        loss_function=loss_function,
+        metric_handler=metric_handler,
+    )
     return val_loss.item()
 
 
-def compute_val_loss_and_metrics(outputs, labels, loss_function):
-    post_pred = Compose([Activations(softmax=True), AsDiscrete(to_onehot=4, argmax=True)])
+def compute_val_loss_and_metrics(inputs, outputs, labels, loss_function, metric_handler: MetricHandler):
+    post_pred = Compose([AsDiscrete(to_onehot=4, argmax=True)])
     post_label = Compose([AsDiscrete(to_onehot=4)])
 
     val_loss = loss_function(outputs, labels)

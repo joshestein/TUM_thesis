@@ -9,6 +9,7 @@ from monai.losses import DiceCELoss, DiceLoss
 from monai.utils import set_determinism
 
 from src.datasets.dataset_helper import DatasetHelperFactory
+from src.metrics import MetricHandler
 from src.sam.sam_inference import setup_sam
 from src.sam.sam_train import train
 from src.utils import get_train_dataloaders, setup_dirs
@@ -66,6 +67,8 @@ def main(dataset_name: str, num_sample_points: int):
     )
     wandb.config.dataset = dataset_name
 
+    metric_handler = MetricHandler("dice_with_background")
+
     train(
         sam=sam,
         train_loader=train_loader,
@@ -77,6 +80,7 @@ def main(dataset_name: str, num_sample_points: int):
         device=device,
         out_dir=out_dir,
         num_sample_points=num_sample_points,
+        metric_handler=metric_handler,
     )
 
 
