@@ -4,7 +4,7 @@ from typing import Optional
 import torch
 import wandb
 from monai.data import decollate_batch
-from monai.transforms import Activations, AsDiscrete, Compose
+from monai.transforms import AsDiscrete, Compose
 from torch.utils.data import DataLoader
 
 from src.metrics import MetricHandler
