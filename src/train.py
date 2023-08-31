@@ -177,5 +177,17 @@ def compute_val_loss_and_metrics(inputs, outputs, labels, loss_function, metric_
 
     for metric in METRICS.values():
         metric(y_pred=val_outputs, y=val_labels)
+    wb_image = wandb.Image(
+        inputs[0][0].cpu(),
+        masks={
+            "predictions": {
+                "mask_data": torch.argmax(val_outputs[0], dim=0).cpu().numpy(),
+                "class_labels": class_labels,
+            },
+            "ground_truth": {"mask_data": labels[0][0].cpu().numpy(), "class_labels": class_labels},
+        },
+    )
+
+    wandb.log({"predictions": wb_image})
 
     return val_loss
