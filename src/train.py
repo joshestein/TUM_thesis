@@ -173,10 +173,14 @@ def compute_val_loss_and_metrics(inputs, outputs, labels, loss_function, metric_
 
     val_loss = loss_function(outputs, labels)
     val_outputs = [post_pred(i) for i in decollate_batch(outputs)]
-    val_labels = [post_label(i) for i in decollate_batch(labels)]
 
-    for metric in METRICS.values():
-        metric(y_pred=val_outputs, y=val_labels)
+    val_labels = decollate_batch(labels)
+    if val_labels[0].shape[0] == 1:
+        # Otherwise the label is already in a one-hot form
+        val_labels = [post_label(i) for i in val_labels]
+
+    class_labels = {0: "background", 1: "RV", 2: "MYO", 3: "LV"}
+
     wb_image = wandb.Image(
         inputs[0][0].cpu(),
         masks={
@@ -189,5 +193,6 @@ def compute_val_loss_and_metrics(inputs, outputs, labels, loss_function, metric_
     )
 
     wandb.log({"predictions": wb_image})
+    metric_handler.accumulate_metrics(val_outputs, val_labels)
 
     return val_loss
