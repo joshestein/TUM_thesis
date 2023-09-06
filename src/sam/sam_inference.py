@@ -94,8 +94,11 @@ def run_batch_inference(
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
     dice_scores = []
     for batch_index, batch in enumerate(test_loader):
-        inputs, labels = batch["image"].to(device), batch["label"].to(device, dtype=torch.uint8)
-        patient = batch["patient"]
+        inputs, labels, patient = (
+            batch["image"].to(device),
+            batch["label"].to(device, dtype=torch.uint8),
+            batch["patient"],
+        )
 
         with torch.no_grad():
             masks, labels, boxes, points, transformed_images = get_batch_predictions(
