@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
-    convert_to_normalized_grayscale,
+    convert_to_normalized_colour,
     get_batch_predictions,
     get_numpy_bounding_box,
     get_sam_points,
@@ -48,7 +48,7 @@ def run_inference(
         patient = batch["patient"][0]
 
         print(f"Predicting patient: {patient}")
-        inputs = convert_to_normalized_grayscale(inputs)
+        inputs = convert_to_normalized_colour(inputs)
         predictor.set_image(inputs)
 
         labels = labels[0].permute(1, 0)  # Swap W, H
