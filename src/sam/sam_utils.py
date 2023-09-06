@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import wandb
 from matplotlib import pyplot as plt
-from scipy.spatial.distance import cdist
+from scipy import ndimage
 from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
@@ -42,29 +42,52 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> np.ndarray:
     return np.array(bbox)
 
 
-def get_points(onehot_mask: np.ndarray, num_points_to_sample: int) -> np.ndarray:
-    # Sample n points from the ground truth mask.
-    # Assumes the mask is one-hot encoded, and that there are at least n points in the mask.
-    # Samples are chosen in a way that tries to maximize the distance between points
-    nonzero_coords = np.array(np.where(onehot_mask == 1)).T
+def get_sam_points(
+    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int = 1
+) -> (np.array, np.array):
+    # Sample n points from each class of the ground truth mask.
+    # Samples are chosen by:
+    # 1. Finding the centre of mass of the class.
+    # 2. If the centre of mass is part of the class, it is used as the initial sampling point.
+    # 3. All remaining points are sampled from a uniform distribution across a flattened vector of the class.
 
-    # Randomly select the initial point
-    initial_point_idx = np.random.randint(len(nonzero_coords))
+    # Negative points are sampled from the ventricles when sampling from the myocardium.
+    points_per_class, labels_per_class = [], []
 
-    # We flip because np.where returns (y, x) coordinates, but we want (x, y)
-    sampled_points = [np.flip(nonzero_coords[initial_point_idx])]
-    remaining_coords = np.delete(nonzero_coords, initial_point_idx, axis=0)
+    for class_index in range(num_classes):
+        sampled_points = sample_points((ground_truth == class_index).astype(int), num_pos_points)
+        ones = np.ones(num_pos_points)
 
-    while len(sampled_points) < num_points_to_sample:
-        distances = cdist(sampled_points, remaining_coords, metric="euclidean")
-        min_distances = np.min(distances, axis=0)
-        max_min_distance_idx = np.argmax(min_distances)
+        # For the myocardium, we sample negative points from both ventricles as well
+        if class_index == 2:
+            lv_points = sample_points((ground_truth == 1).astype(int), num_neg_points)
+            rv_points = sample_points((ground_truth == 3).astype(int), num_neg_points)
 
-        new_point = remaining_coords[max_min_distance_idx]
-        sampled_points.append(np.flip(new_point))
-        remaining_coords = np.delete(remaining_coords, max_min_distance_idx, axis=0)
+            sampled_points = np.concatenate((sampled_points, lv_points, rv_points))
+            ones = np.concatenate((ones, np.zeros(num_neg_points), np.zeros(num_neg_points)))
 
-    return np.array(sampled_points)
+        points_per_class.append(sampled_points)
+        labels_per_class.append(ones)
+
+    # Use dtype=object since the arrays will be jagged, due to class 2 sampling negative points
+    return np.array(points_per_class, dtype=object), np.array(labels_per_class, dtype=object)
+
+
+def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
+    center_of_mass = ndimage.measurements.center_of_mass(mask)
+    center_of_mass = [int(i) for i in center_of_mass]
+    if mask[*center_of_mass] == 1:
+        points = [center_of_mass]
+        num_points -= 1
+    else:
+        points = []
+
+    indices = np.argwhere(mask == 1).flatten()
+    random_indices = np.random.choice(indices, num_points)
+    sampled_points = np.column_stack(np.unravel_index(random_indices, mask.shape))
+    points.extend(sampled_points)
+
+    return np.array(points)
 
 
 def show_mask(mask, ax, random_color=False):
