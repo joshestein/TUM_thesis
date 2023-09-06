@@ -103,6 +103,7 @@ def run_batch_inference(
                 transform=resize_transform,
                 inputs=inputs,
                 labels=labels,
+                patients=patient,
                 num_points=num_sample_points,
                 num_classes=num_classes,
             )
