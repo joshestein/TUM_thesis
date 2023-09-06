@@ -165,24 +165,26 @@ def get_batch_predictions(
             print(f"Skipping patient {patients[index]} as it contains empty labels.")
             continue
 
-        # Get bounding box for each class of one-hot encoded mask
-        for label in onehot_labels:
+        points, point_labels = get_sam_points(ground_truth.cpu().numpy(), num_classes, num_points)
+
+        # Get bounding box and points for each class of one-hot encoded mask
+        for i, label in enumerate(onehot_labels):
             bbox = get_bounding_box(label)
-            point, point_labels = get_sam_points(label.cpu().numpy(), num_points)
+            point, point_label = None, None
 
             if bbox is not None:
                 bbox = transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
-            if point is not None:
-                point = transform.apply_coords_torch(torch.as_tensor(point, device=sam.device), image.shape[1:])
-                point_labels = torch.as_tensor(point_labels, device=sam.device)
-                point, point_labels = point.unsqueeze(0), point_labels.unsqueeze(0)
+            if points[i] is not None:
+                point = transform.apply_coords_torch(torch.as_tensor(points[i], device=sam.device), image.shape[1:])
+                point_label = torch.as_tensor(point_labels[i], device=sam.device)
+                point, point_label = point.unsqueeze(0), point_label.unsqueeze(0)
 
             batched_input.append(
                 {
                     "image": prepared_image,
                     "boxes": bbox,
                     "point_coords": point,
-                    "point_labels": point_labels,
+                    "point_labels": point_label,
                     "original_size": image.shape[1:],
                     "gt": label,
                 }

@@ -52,23 +52,23 @@ def run_inference(
         predictor.set_image(inputs)
 
         labels = labels[0].permute(1, 0)  # Swap W, H
+        labels = labels.cpu().numpy()
 
-        bboxes, masks, points, point_labels = [], [], [], []
-        labels_per_class = [np.array((labels == class_index).astype(int)) for class_index in range(num_classes)]
+        bboxes, masks = [], []
+        labels_per_class = [np.array((labels == class_index), dtype=np.uint8) for class_index in range(num_classes)]
         if any(np.count_nonzero(label) == 0 for label in labels_per_class):
             print(f"Skipping {patient} as it contains empty labels.")
             continue
 
-        for label in labels_per_class:
+        points, point_labels = get_sam_points(labels, num_classes, num_sample_points) if use_points else (None, None)
+
+        for i, label in enumerate(labels_per_class):
             bbox = get_numpy_bounding_box(label) if use_bboxes else None
-            point_coords, point_label = get_sam_points(label, num_sample_points) if use_points else (None, None)
             mask, _, _ = predictor.predict(
-                box=bbox, point_coords=point_coords, point_labels=point_label, multimask_output=False
+                box=bbox, point_coords=points[i], point_labels=point_labels[i], multimask_output=False
             )
             masks.append(mask)
             bboxes.append(bbox)
-            points.append(point_coords)
-            point_labels.append(point_label)
 
         save_figure(
             patient_name=patient,
