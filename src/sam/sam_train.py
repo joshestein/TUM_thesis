@@ -96,11 +96,16 @@ def get_epoch_loss(
     num_sample_points: int,
     num_classes: int = 4,
 ):
-    inputs, labels = batch_data["image"].to(device), batch_data["label"].to(device)
+    inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
 
     sam.train()
-    predictions, labels, _, _, _ = get_batch_predictions(
-        sam=sam, inputs=inputs, labels=labels, num_points=num_sample_points, num_classes=num_classes
+    predictions, labels, _, _, _, _ = get_batch_predictions(
+        sam=sam,
+        inputs=inputs,
+        labels=labels,
+        patients=patients,
+        num_points=num_sample_points,
+        num_classes=num_classes,
     )
     if predictions == [] and labels == []:
         # Empty batch due to all labels being incomplete
@@ -156,9 +161,13 @@ def get_validation_loss(
     metric_handler: MetricHandler,
     num_sample_points: int,
 ):
-    val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
-    val_outputs, val_labels, _, _, _ = get_batch_predictions(
-        sam=sam, inputs=val_inputs, labels=val_labels, num_points=num_sample_points
+    val_inputs, val_labels, val_patients = (
+        val_data["image"].to(device),
+        val_data["label"].to(device),
+        val_data["patient"],
+    )
+    val_outputs, val_labels, _, _, _, _ = get_batch_predictions(
+        sam=sam, inputs=val_inputs, labels=val_labels, patients=val_patients, num_points=num_sample_points
     )
 
     if val_outputs == [] and val_labels == []:
