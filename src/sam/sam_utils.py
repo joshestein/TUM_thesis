@@ -74,6 +74,7 @@ def get_sam_points(
 
 
 def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
+    mask = mask.T  # Since we swap the W and H during the dataloading, we reverse that swap here.
     center_of_mass = ndimage.measurements.center_of_mass(mask)
     center_of_mass = [int(i) for i in center_of_mass]
     if mask[*center_of_mass] == 1:
@@ -82,9 +83,8 @@ def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
     else:
         points = []
 
-    indices = np.argwhere(mask == 1).flatten()
-    random_indices = np.random.choice(indices, num_points)
-    sampled_points = np.column_stack(np.unravel_index(random_indices, mask.shape))
+    indices = np.argwhere(mask == 1)
+    sampled_points = indices[np.random.choice(len(indices), num_points, replace=False)]
     points.extend(sampled_points)
 
     return np.array(points)
