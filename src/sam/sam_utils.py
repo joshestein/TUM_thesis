@@ -43,7 +43,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np
 
 
 def get_sam_points(
-    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int = 1
+    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points
 ) -> (np.array, np.array):
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
@@ -148,7 +148,8 @@ def get_batch_predictions(
     inputs: torch.tensor,
     labels: torch.tensor,
     patients: torch.tensor,
-    num_points: int,
+    pos_sample_points: int,
+    neg_sample_points: int,
     num_classes=4,
     transform=None,
 ):
@@ -173,7 +174,9 @@ def get_batch_predictions(
             print(f"Skipping patient {patients[index]} as it contains empty labels.")
             continue
 
-        points, point_labels = get_sam_points(ground_truth.cpu().numpy(), num_classes, num_points)
+        points, point_labels = get_sam_points(
+            ground_truth.cpu().numpy(), num_classes, pos_sample_points, neg_sample_points
+        )
 
         # Get bounding box and points for each class of one-hot encoded mask
         for i, label in enumerate(onehot_labels):

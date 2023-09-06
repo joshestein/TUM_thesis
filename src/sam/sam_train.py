@@ -44,7 +44,7 @@ def train(
                 sam=sam,
                 loss_function=loss_function,
                 device=device,
-                num_sample_points=num_sample_points,
+                pos_sample_points=num_sample_points,
             )
 
             if loss == -1:
@@ -93,7 +93,7 @@ def get_epoch_loss(
     sam: Sam,
     loss_function: torch.nn.Module,
     device: str | torch.device,
-    num_sample_points: int,
+    pos_sample_points: int,
     num_classes: int = 4,
 ):
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
@@ -104,7 +104,8 @@ def get_epoch_loss(
         inputs=inputs,
         labels=labels,
         patients=patients,
-        num_points=num_sample_points,
+        pos_sample_points=pos_sample_points,
+        neg_sample_points=1,
         num_classes=num_classes,
     )
     if predictions == [] and labels == []:
@@ -140,7 +141,7 @@ def validate(
                 loss_function=loss_function,
                 device=device,
                 metric_handler=metric_handler,
-                num_sample_points=num_sample_points,
+                pos_sample_points=num_sample_points,
             )
 
             if validation_loss == -1:
@@ -159,7 +160,7 @@ def get_validation_loss(
     loss_function: torch.nn.Module,
     device: str | torch.device,
     metric_handler: MetricHandler,
-    num_sample_points: int,
+    pos_sample_points: int,
 ):
     val_inputs, val_labels, val_patients = (
         val_data["image"].to(device),
@@ -167,7 +168,12 @@ def get_validation_loss(
         val_data["patient"],
     )
     val_outputs, val_labels, _, _, _, _ = get_batch_predictions(
-        sam=sam, inputs=val_inputs, labels=val_labels, patients=val_patients, num_points=num_sample_points
+        sam=sam,
+        inputs=val_inputs,
+        labels=val_labels,
+        patients=val_patients,
+        pos_sample_points=pos_sample_points,
+        neg_sample_points=1,
     )
 
     if val_outputs == [] and val_labels == []:

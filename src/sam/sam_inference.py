@@ -37,7 +37,8 @@ def run_inference(
     predictor: SamPredictor,
     device: str | torch.device,
     out_dir: Path,
-    num_sample_points: int,
+    pos_sample_points: int,
+    neg_sample_points: int,
     use_bboxes: bool = True,
     use_points: bool = True,
     num_classes=4,
@@ -61,7 +62,9 @@ def run_inference(
             print(f"Skipping {patient} as it contains empty labels.")
             continue
 
-        points, point_labels = get_sam_points(labels, num_classes, num_sample_points) if use_points else (None, None)
+        points, point_labels = (
+            get_sam_points(labels, num_classes, pos_sample_points, neg_sample_points) if use_points else (None, None)
+        )
 
         for i, label in enumerate(labels_per_class):
             bbox = get_numpy_bounding_box(label) if use_bboxes else None
@@ -108,7 +111,8 @@ def run_batch_inference(
                 inputs=inputs,
                 labels=labels,
                 patients=patient,
-                num_points=num_sample_points,
+                pos_sample_points=num_sample_points,
+                neg_sample_points=1,
                 num_classes=num_classes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
@@ -175,7 +179,13 @@ def main(dataset: str, num_sample_points: int, use_bboxes: bool):
     figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
     dice_scores = run_inference(
-        test_loader, SamPredictor(sam), device, figure_dir, use_bboxes=use_bboxes, num_sample_points=num_sample_points
+        test_loader,
+        SamPredictor(sam),
+        device,
+        figure_dir,
+        use_bboxes=use_bboxes,
+        pos_sample_points=num_sample_points,
+        neg_sample_points=1,
     )
     # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
