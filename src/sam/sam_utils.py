@@ -134,15 +134,14 @@ def prepare_image(image, transform, device):
     return image.permute(2, 0, 1).contiguous()
 
 
-def get_sam_points(label: np.ndarray, num_sample_points: int):
-    point_coords = get_points(label, num_sample_points)
-    point_label = np.ones(num_sample_points)
-
-    return point_coords, point_label
-
-
 def get_batch_predictions(
-    sam: Sam, inputs: torch.tensor, labels: torch.tensor, num_points: int, num_classes=4, transform=None
+    sam: Sam,
+    inputs: torch.tensor,
+    labels: torch.tensor,
+    patients: torch.tensor,
+    num_points: int,
+    num_classes=4,
+    transform=None,
 ):
     """Given inputs and labels, runs inference on all examples in the batch.
     For each example, returns the predicted masks, ground truth masks, bounding boxes, and transformed images.
@@ -191,16 +190,16 @@ def get_batch_predictions(
             )
 
     if not batched_input:
-        return [], [], [], [], []
+        return [], [], [], [], [], []
 
     # TODO: the gradients are disabled in Sam with the decorator @torch.no_grad
     # batched_output = sam(batched_input, multimask_output=False)
     batched_output = forward(sam, batched_input, multimask_output=False)
 
     masks = collate_mask_outputs(batched_output, num_classes)
-    ground_truths, bboxes, points, transformed_images = collate_batch_inputs(batched_input, num_classes)
+    ground_truths, bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
 
-    return masks, ground_truths, bboxes, points, transformed_images
+    return masks, ground_truths, bboxes, points, point_labels, transformed_images
 
 
 def collate_mask_outputs(batched_output, num_classes: int):
@@ -213,7 +212,7 @@ def collate_mask_outputs(batched_output, num_classes: int):
 
 
 def collate_batch_inputs(batched_input, num_classes: int):
-    ground_truths, bboxes, points, transformed_images = [], [], [], []
+    ground_truths, bboxes, points, point_labels, transformed_images = [], [], [], [], []
     for i in range(0, len(batched_input), num_classes):
         collated_gts = [batched_input[i + class_index]["gt"] for class_index in range(num_classes)]
         collated_boxes = [
@@ -226,15 +225,22 @@ def collate_batch_inputs(batched_input, num_classes: int):
             else None
             for class_index in range(num_classes)
         ]
+        collated_point_labels = [
+            batched_input[i + class_index]["point_labels"][0]
+            if batched_input[i + class_index]["point_labels"] is not None
+            else None
+            for class_index in range(num_classes)
+        ]
         ground_truths.append(torch.stack(collated_gts))
         bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         points.append(collated_points)
+        point_labels.append(collated_point_labels)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
     ground_truths = torch.stack(ground_truths)
     transformed_images = torch.stack(transformed_images)
 
-    return ground_truths, bboxes, points, transformed_images
+    return ground_truths, bboxes, points, point_labels, transformed_images
 
 
 def save_figure(

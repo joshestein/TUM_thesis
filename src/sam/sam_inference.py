@@ -101,7 +101,7 @@ def run_batch_inference(
         )
 
         with torch.no_grad():
-            masks, labels, boxes, points, transformed_images = get_batch_predictions(
+            masks, labels, boxes, points, point_labels, transformed_images = get_batch_predictions(
                 sam=sam,
                 transform=resize_transform,
                 inputs=inputs,
@@ -121,7 +121,7 @@ def run_batch_inference(
                 out_dir=out_dir,
                 num_classes=num_classes,
                 points=points[i],
-                point_labels=np.ones(num_sample_points) * len(points),
+                point_labels=point_labels[i],
                 save_to_wandb=True,
             )
             dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
