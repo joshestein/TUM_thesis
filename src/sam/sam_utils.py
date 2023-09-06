@@ -162,7 +162,7 @@ def get_batch_predictions(
         ]
 
         if any(torch.count_nonzero(label) == 0 for label in onehot_labels):
-            print(f"Skipping index {index} as it contains empty labels.")
+            print(f"Skipping patient {patients[index]} as it contains empty labels.")
             continue
 
         # Get bounding box for each class of one-hot encoded mask
