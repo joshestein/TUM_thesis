@@ -2,6 +2,7 @@ import json
 import os
 import tomllib
 from pathlib import Path
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -38,7 +39,7 @@ def run_inference(
     device: str | torch.device,
     out_dir: Path,
     pos_sample_points: int,
-    neg_sample_points: int,
+    neg_sample_points: Optional[int] = None,
     use_bboxes: bool = True,
     use_points: bool = True,
     num_classes=4,
@@ -112,7 +113,6 @@ def run_batch_inference(
                 labels=labels,
                 patients=patient,
                 pos_sample_points=num_sample_points,
-                neg_sample_points=1,
                 num_classes=num_classes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
@@ -138,13 +138,13 @@ def run_batch_inference(
     return torch.tensor(dice_scores)
 
 
-def main(dataset: str, num_sample_points: int, use_bboxes: bool):
-    num_samples_str = f"num_samples_{num_sample_points}"
+def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: Optional[int] = None):
+    num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "" if use_bboxes else "no_bboxes"
     wandb.init(
         project=f"sam_inference",
         name=f"{dataset}_{'_'.join((num_samples_str, use_bbox_str))}",
-        config={"dataset": dataset, "num_sample_points": num_sample_points},
+        config={"dataset": dataset, "num_sample_points": pos_sample_points},
         mode="disabled",
         reinit=True,
     )
@@ -184,8 +184,8 @@ def main(dataset: str, num_sample_points: int, use_bboxes: bool):
         device,
         figure_dir,
         use_bboxes=use_bboxes,
-        pos_sample_points=num_sample_points,
-        neg_sample_points=1,
+        pos_sample_points=pos_sample_points,
+        neg_sample_points=neg_sample_points,
     )
     # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
     mean_fg_dice = torch.mean(dice_scores, dim=0)
@@ -215,10 +215,16 @@ if __name__ == "__main__":
         default="acdc",
     )
     parser.add_argument(
-        "--num_sample_points",
-        "-s",
+        "--pos_sample_points",
+        "-p",
         type=int,
         default=2,
+    )
+    parser.add_argument(
+        "--neg_sample_points",
+        "-n",
+        type=int,
+        default=1,
     )
     parser.add_argument(
         "--use_bboxes",

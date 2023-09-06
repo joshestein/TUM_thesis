@@ -105,7 +105,6 @@ def get_epoch_loss(
         labels=labels,
         patients=patients,
         pos_sample_points=pos_sample_points,
-        neg_sample_points=1,
         num_classes=num_classes,
     )
     if predictions == [] and labels == []:
@@ -173,7 +172,6 @@ def get_validation_loss(
         labels=val_labels,
         patients=val_patients,
         pos_sample_points=pos_sample_points,
-        neg_sample_points=1,
     )
 
     if val_outputs == [] and val_labels == []:

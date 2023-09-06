@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -43,7 +44,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np
 
 
 def get_sam_points(
-    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points
+    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: Optional[int]
 ) -> (np.array, np.array):
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
@@ -59,7 +60,7 @@ def get_sam_points(
         ones = np.ones(num_pos_points)
 
         # For the myocardium, we sample negative points from both ventricles as well
-        if class_index == 2:
+        if class_index == 2 and num_neg_points is not None:
             lv_points = sample_points((ground_truth == 1).astype(int), num_neg_points)
             rv_points = sample_points((ground_truth == 3).astype(int), num_neg_points)
 
@@ -149,7 +150,7 @@ def get_batch_predictions(
     labels: torch.tensor,
     patients: torch.tensor,
     pos_sample_points: int,
-    neg_sample_points: int,
+    neg_sample_points: Optional[int] = None,
     num_classes=4,
     transform=None,
 ):
