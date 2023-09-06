@@ -10,33 +10,33 @@ from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
 
-def get_bounding_box(ground_truth_map: torch.tensor) -> list[torch.tensor]:
+def get_bounding_box(ground_truth_map: torch.tensor, margin: int = 10) -> list[torch.tensor]:
     # get bounding box from mask
     y_indices, x_indices = torch.where(ground_truth_map > 0)
     x_min, x_max = torch.min(x_indices), torch.max(x_indices)
     y_min, y_max = torch.min(y_indices), torch.max(y_indices)
     # add perturbation to bounding box coordinates
     height, width = ground_truth_map.shape
-    x_min = max(0, x_min - torch.randint(0, 20, size=()))
-    x_max = min(width, x_max + torch.randint(0, 20, size=()))
-    y_min = max(0, y_min - torch.randint(0, 20, size=()))
-    y_max = min(height, y_max + torch.randint(0, 20, size=()))
+    x_min = max(0, x_min - margin)
+    x_max = min(width, x_max + margin)
+    y_min = max(0, y_min - margin)
+    y_max = min(height, y_max + margin)
     bbox = [x_min, y_min, x_max, y_max]
 
     return bbox
 
 
-def get_numpy_bounding_box(ground_truth_map: np.ndarray) -> np.ndarray:
+def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np.ndarray:
     # get bounding box from mask
     y_indices, x_indices = np.where(ground_truth_map > 0)
     x_min, x_max = np.min(x_indices), np.max(x_indices)
     y_min, y_max = np.min(y_indices), np.max(y_indices)
     # add perturbation to bounding box coordinates
     height, width = ground_truth_map.shape
-    x_min = max(0, x_min - np.random.randint(0, 20))
-    x_max = min(width, x_max + np.random.randint(0, 20))
-    y_min = max(0, y_min - np.random.randint(0, 20))
-    y_max = min(height, y_max + np.random.randint(0, 20))
+    x_min = max(0, x_min - margin)
+    x_max = min(width, x_max + margin)
+    y_min = max(0, y_min - margin)
+    y_max = min(height, y_max + margin)
     bbox = [x_min, y_min, x_max, y_max]
 
     return np.array(bbox)
