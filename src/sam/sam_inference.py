@@ -135,9 +135,11 @@ def run_batch_inference(
 
 
 def main(dataset: str, num_sample_points: int, use_bboxes: bool):
+    num_samples_str = f"num_samples_{num_sample_points}"
+    use_bbox_str = "" if use_bboxes else "no_bboxes"
     wandb.init(
         project=f"sam_inference",
-        name=f"{dataset}_num_samples_{num_sample_points}",
+        name=f"{dataset}_{'_'.join((num_samples_str, use_bbox_str))}",
         config={"dataset": dataset, "num_sample_points": num_sample_points},
         mode="disabled",
         reinit=True,
@@ -147,6 +149,9 @@ def main(dataset: str, num_sample_points: int, use_bboxes: bool):
     root_dir = Path(os.getcwd())
 
     data_dir, log_dir, out_dir = setup_dirs(root_dir)
+    out_dir = out_dir / "sam" / f"{dataset}" / f"{num_samples_str}"
+    if not use_bboxes:
+        out_dir = out_dir / "no_bboxes"
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
