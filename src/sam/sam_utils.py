@@ -274,7 +274,7 @@ def save_figure(
 
         # Original input
         plt.subplot(num_classes, 3, (class_index - 1) * 3 + 1)
-        plt.imshow(inputs, cmap="gray")
+        plt.imshow(inputs)
         show_box(bboxes[class_index], plt.gca())
         show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
 
