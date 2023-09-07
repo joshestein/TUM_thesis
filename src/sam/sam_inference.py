@@ -141,9 +141,11 @@ def run_batch_inference(
 def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: Optional[int] = None):
     num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "" if use_bboxes else "no_bboxes"
+    neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+
     wandb.init(
         project=f"sam_inference",
-        name=f"{dataset}_{'_'.join((num_samples_str, use_bbox_str))}",
+        name=f"{dataset}_{'_'.join(filter(None, (num_samples_str, use_bbox_str, neg_samples_str)))}",
         config={"dataset": dataset, "num_sample_points": pos_sample_points},
         mode="disabled",
         reinit=True,
@@ -156,12 +158,13 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     out_dir = out_dir / "sam" / f"{dataset}" / f"{num_samples_str}"
     if not use_bboxes:
         out_dir = out_dir / "no_bboxes"
+    if neg_sample_points is not None:
+        out_dir = out_dir / f"{neg_samples_str}"
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
 
     augment = config["hyperparameters"].get("augment", True)
-    # batch_size = config["hyperparameters"].get("batch_size", 4)
     batch_size = 1
     spatial_dims = 2
     set_determinism(seed=config["hyperparameters"]["seed"])
@@ -236,4 +239,6 @@ if __name__ == "__main__":
 
     for dataset in ["acdc", "mnms"]:
         for num_points in [2, 3, 5]:
-            main(dataset, num_points, args.use_bboxes)
+            for use_bboxes in [True, False]:
+                for neg_points in [None, 1]:
+                    main(dataset, num_points, use_bboxes, neg_points)
