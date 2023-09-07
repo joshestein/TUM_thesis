@@ -78,7 +78,7 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
     )
     wandb.config.dataset = dataset_name
 
-    metric_handler = MetricHandler("dice_with_background")
+    metric_handler = MetricHandler("dice")
 
     train(
         sam=sam,
