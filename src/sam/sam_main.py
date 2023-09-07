@@ -59,11 +59,14 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
     sam = setup_sam(root_dir, device)
     optimizer = torch.optim.Adam(sam.mask_decoder.parameters(), lr=learning_rate)
 
-    out_dir = root_out_dir / "sam" / dataset_name
-    os.makedirs(out_dir, exist_ok=True)
-
     num_samples_str = f"num_samples_{pos_sample_points}"
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+
+    out_dir = root_out_dir / "sam" / dataset_name / num_samples_str
+    if neg_sample_points is not None:
+        out_dir = out_dir / neg_samples_str
+
+    os.makedirs(out_dir, exist_ok=True)
 
     wandb.init(
         project=f"sam_{dataset_name}",

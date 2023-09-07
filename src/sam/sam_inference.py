@@ -154,11 +154,11 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     root_dir = Path(os.getcwd())
 
     data_dir, log_dir, out_dir = setup_dirs(root_dir)
-    out_dir = out_dir / "sam" / f"{dataset}" / f"{num_samples_str}"
+    out_dir = out_dir / "sam" / f"{dataset}" / num_samples_str
     if not use_bboxes:
         out_dir = out_dir / "no_bboxes"
     if neg_sample_points is not None:
-        out_dir = out_dir / f"{neg_samples_str}"
+        out_dir = out_dir / neg_samples_str
 
     with open(root_dir / "config.toml", "rb") as file:
         config = tomllib.load(file)
