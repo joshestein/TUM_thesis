@@ -158,6 +158,7 @@ def get_batch_predictions(
     patients: torch.tensor,
     pos_sample_points: int,
     neg_sample_points: int | None = None,
+    use_bboxes: bool = True,
     num_classes=4,
     transform=None,
 ):
@@ -188,7 +189,7 @@ def get_batch_predictions(
 
         # Get bounding box and points for each class of one-hot encoded mask
         for i, label in enumerate(onehot_labels):
-            bbox = get_bounding_box(label)
+            bbox = get_bounding_box(label) if use_bboxes else None
             point, point_label = None, None
 
             if bbox is not None:
