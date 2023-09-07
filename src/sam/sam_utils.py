@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -44,7 +43,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np
 
 
 def get_sam_points(
-    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: Optional[int]
+    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int | None
 ) -> (np.array, np.array):
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
@@ -158,7 +157,7 @@ def get_batch_predictions(
     labels: torch.tensor,
     patients: torch.tensor,
     pos_sample_points: int,
-    neg_sample_points: Optional[int] = None,
+    neg_sample_points: int | None = None,
     num_classes=4,
     transform=None,
 ):

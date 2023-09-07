@@ -2,7 +2,6 @@ import json
 import os
 import tomllib
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -39,7 +38,7 @@ def run_inference(
     device: str | torch.device,
     out_dir: Path,
     pos_sample_points: int,
-    neg_sample_points: Optional[int] = None,
+    neg_sample_points: int | None = None,
     use_bboxes: bool = True,
     use_points: bool = True,
     num_classes=4,
@@ -138,7 +137,7 @@ def run_batch_inference(
     return torch.tensor(dice_scores)
 
 
-def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: Optional[int] = None):
+def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int | None = None):
     num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "" if use_bboxes else "no_bboxes"
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
