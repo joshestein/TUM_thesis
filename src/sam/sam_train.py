@@ -20,8 +20,9 @@ def train(
     epochs: int,
     device: str | torch.device,
     out_dir: str | os.PathLike,
-    num_sample_points: int,
+    pos_sample_points: int,
     metric_handler: MetricHandler,
+    neg_sample_points: int | None = None,
 ):
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
@@ -44,7 +45,8 @@ def train(
                 sam=sam,
                 loss_function=loss_function,
                 device=device,
-                pos_sample_points=num_sample_points,
+                pos_sample_points=pos_sample_points,
+                neg_sample_points=neg_sample_points,
             )
 
             if loss == -1:
@@ -64,7 +66,8 @@ def train(
                 val_loader=val_loader,
                 device=device,
                 loss_function=loss_function,
-                num_sample_points=num_sample_points,
+                pos_sample_points=pos_sample_points,
+                neg_sample_points=neg_sample_points,
                 metric_handler=metric_handler,
             )
 
@@ -95,6 +98,7 @@ def get_epoch_loss(
     device: str | torch.device,
     pos_sample_points: int,
     num_classes: int = 4,
+    neg_sample_points: int | None = None,
 ):
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
 
@@ -105,6 +109,7 @@ def get_epoch_loss(
         labels=labels,
         patients=patients,
         pos_sample_points=pos_sample_points,
+        neg_sample_points=neg_sample_points,
         num_classes=num_classes,
     )
     if predictions == [] and labels == []:
@@ -125,7 +130,8 @@ def validate(
     device: str | torch.device,
     loss_function: torch.nn.Module,
     metric_handler: MetricHandler,
-    num_sample_points: int,
+    pos_sample_points: int,
+    neg_sample_points: int | None,
 ):
     sam.eval()
     with torch.no_grad():
@@ -140,7 +146,8 @@ def validate(
                 loss_function=loss_function,
                 device=device,
                 metric_handler=metric_handler,
-                pos_sample_points=num_sample_points,
+                pos_sample_points=pos_sample_points,
+                neg_sample_points=neg_sample_points,
             )
 
             if validation_loss == -1:
@@ -160,6 +167,7 @@ def get_validation_loss(
     device: str | torch.device,
     metric_handler: MetricHandler,
     pos_sample_points: int,
+    neg_sample_points: int | None,
 ):
     val_inputs, val_labels, val_patients = (
         val_data["image"].to(device),
@@ -172,6 +180,7 @@ def get_validation_loss(
         labels=val_labels,
         patients=val_patients,
         pos_sample_points=pos_sample_points,
+        neg_sample_points=neg_sample_points,
     )
 
     if val_outputs == [] and val_labels == []:
