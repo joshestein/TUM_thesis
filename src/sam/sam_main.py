@@ -66,7 +66,8 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
 
     wandb.init(
-        project=f"sam_{dataset_name}_{'_'.join(filter(None, (num_samples_str, neg_samples_str)))}",
+        project=f"sam_{dataset_name}",
+        name=f"{'_'.join(filter(None, (num_samples_str, neg_samples_str)))}",
         config=config["hyperparameters"],
         dir=log_dir,
         mode="disabled",
