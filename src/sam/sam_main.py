@@ -15,7 +15,7 @@ from src.sam.sam_train import train
 from src.utils import get_train_dataloaders, setup_dirs
 
 
-def main(dataset_name: str, num_sample_points: int):
+def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | None = None):
     root_dir = Path(os.getcwd())
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
@@ -79,8 +79,9 @@ def main(dataset_name: str, num_sample_points: int):
         epochs=epochs,
         device=device,
         out_dir=out_dir,
-        num_sample_points=num_sample_points,
+        pos_sample_points=pos_sample_points,
         metric_handler=metric_handler,
+        neg_sample_points=neg_sample_points,
     )
 
 
