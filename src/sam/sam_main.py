@@ -96,11 +96,17 @@ if __name__ == "__main__":
         default="acdc",
     )
     parser.add_argument(
-        "--num_sample_points",
-        "-s",
+        "--pos_sample_points",
+        "-p",
         type=int,
         default=2,
     )
+    parser.add_argument(
+        "--neg_sample_points",
+        "-n",
+        type=int,
+        default=1,
+    )
     args = parser.parse_args()
 
-    main(args.dataset, args.num_sample_points)
+    main(args.dataset, args.pos_sample_points, args.neg_sample_points)
