@@ -62,8 +62,15 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
     out_dir = root_out_dir / "sam" / dataset_name
     os.makedirs(out_dir, exist_ok=True)
 
+    num_samples_str = f"num_samples_{pos_sample_points}"
+    neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+
     wandb.init(
-        project=f"sam_{dataset_name}", config=config["hyperparameters"], dir=log_dir, mode="disabled", reinit=True
+        project=f"sam_{dataset_name}_{'_'.join(filter(None, (num_samples_str, neg_samples_str)))}",
+        config=config["hyperparameters"],
+        dir=log_dir,
+        mode="disabled",
+        reinit=True,
     )
     wandb.config.dataset = dataset_name
 
