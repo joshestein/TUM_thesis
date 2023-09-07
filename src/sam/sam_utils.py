@@ -70,8 +70,16 @@ def get_sam_points(
         points_per_class.append(sampled_points)
         labels_per_class.append(ones)
 
-    # Use dtype=object since the arrays will be jagged, due to class 2 sampling negative points
-    return np.array(points_per_class, dtype=object), np.array(labels_per_class, dtype=object)
+    try:
+        points_per_class = np.array(points_per_class)
+        labels_per_class = np.array(labels_per_class)
+    except:
+        # When using negative sampling, we will have jagged arrays.
+        # Use dtype=object to prevent errors.
+        points_per_class = np.array(points_per_class, dtype=object)
+        labels_per_class = np.array(labels_per_class, dtype=object)
+
+    return points_per_class, labels_per_class
 
 
 def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
