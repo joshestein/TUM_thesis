@@ -108,7 +108,7 @@ def show_mask(mask, ax, random_color=False):
     ax.imshow(mask_image)
 
 
-def show_points(coords: np.ndarray | torch.tensor, labels: np.ndarray | torch.tensor, ax, marker_size=375):
+def show_points(coords, labels, ax, marker_size=375):
     if isinstance(coords, torch.Tensor):
         coords = coords.cpu().numpy()
 
@@ -125,8 +125,8 @@ def show_points(coords: np.ndarray | torch.tensor, labels: np.ndarray | torch.te
     )
 
 
-def show_box(box: np.ndarray | torch.tensor, ax):
-    if any(v is None for v in box):
+def show_box(box, ax):
+    if box is None or any(v is None for v in box):
         return
 
     if isinstance(box, torch.Tensor):
