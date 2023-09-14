@@ -15,7 +15,12 @@ from src.sam.sam_train import train
 from src.utils import get_train_dataloaders, setup_dirs
 
 
-def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | None = None):
+def main(
+    dataset_name: str,
+    pos_sample_points: int,
+    neg_sample_points: int | None = None,
+    num_training_cases: int | None = None,
+):
     root_dir = Path(os.getcwd())
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
 
@@ -50,7 +55,7 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
         data_dir=data_dir,
         augment=augment,
         percentage_slices=1.0,
-        # num_training_cases=
+        num_training_cases=num_training_cases,
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(
@@ -66,7 +71,7 @@ def main(dataset_name: str, pos_sample_points: int, neg_sample_points: int | Non
     num_samples_str = f"num_samples_{pos_sample_points}"
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
 
-    out_dir = root_out_dir / "sam" / dataset_name / num_samples_str
+    out_dir = root_out_dir / "sam" / dataset_name / f"num_training_cases_{num_training_cases}" / num_samples_str
     if neg_sample_points is not None:
         out_dir = out_dir / neg_samples_str
 
@@ -122,6 +127,14 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument(
+        "--num_training_cases",
+        "-c",
+        type=int,
+        required=False,
+    )
     args = parser.parse_args()
 
-    main(args.dataset, args.pos_sample_points, args.neg_sample_points)
+    for dataset in ["27", "114"]:
+        for num_training_cases in [8, 24, 32, 48, 80, 160, 192, 240]:
+            main(dataset, args.pos_sample_points, args.neg_sample_points, num_training_cases)
