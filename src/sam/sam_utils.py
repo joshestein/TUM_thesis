@@ -277,7 +277,7 @@ def save_figure(
     save_to_wandb: bool = False,
 ):
     plt.ioff()
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(16, 16))
     plt.tight_layout()
 
     for class_index in range(num_classes):
