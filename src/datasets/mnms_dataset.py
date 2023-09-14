@@ -13,16 +13,18 @@ class MNMsDataset(Dataset):
         self,
         data_dir: str | Path,
         transform: monai.transforms.Compose = None,
-        percentage_data: float = 1.0,
+        num_training_cases: int | None = None,
     ):
         """
         :param data_dir: Path to training/testing data
         :param transform: Any transforms that should be applied
-        :param percentage_data: The fraction of the data to use
+        :param num_training_cases: The number of cases to use for training
         """
         self.data_dir = data_dir
         self.patients = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
-        self.patients = self.patients[: int(len(self.patients) * percentage_data)]
+        if num_training_cases is not None:
+            self.patients = self.patients[:num_training_cases]
+
         self.transform = transform
         self.cardiac_phase_indexes = self._get_cardiac_phase_indexes()
 

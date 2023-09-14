@@ -48,7 +48,7 @@ def main(dataset_name: str):
         return
 
     train_data, val_data = dataset(
-        spatial_dims=spatial_dims, data_dir=data_dir, augment=augment, percentage_slices=1.0, percentage_data=1.0
+        spatial_dims=spatial_dims, data_dir=data_dir, augment=augment, percentage_slices=1.0
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(
@@ -91,8 +91,8 @@ def main(dataset_name: str):
 
     val_interval = 5
 
-    for percentage_data in [1.0, 0.8, 0.6, 0.4, 0.2, 0.1, 0.05]:
-        config["hyperparameters"]["percentage_data"] = percentage_data
+    for num_training_cases in [8, 16]:
+        config["hyperparameters"]["num_training_cases"] = num_training_cases
 
         for percentage_slices in [0.8, 0.6, 0.4, 0.2, 0.1, 0.05]:
             config["hyperparameters"]["percentage_slices"] = percentage_slices
@@ -102,7 +102,7 @@ def main(dataset_name: str):
                 data_dir=data_dir,
                 augment=augment,
                 percentage_slices=percentage_slices,
-                percentage_data=percentage_data,
+                num_training_cases=num_training_cases,
             ).get_training_datasets()
 
             train_loader, val_loader = get_train_dataloaders(
@@ -130,7 +130,7 @@ def main(dataset_name: str):
                 root_out_dir
                 / f"UNet_{spatial_dims}D"
                 / f"{dataset_name}"
-                / f"percentage_data_{percentage_data}"
+                / f"num_training_cases_{num_training_cases}"
                 / f"percentage_slices_{percentage_slices}"
             )
             os.makedirs(out_dir, exist_ok=True)

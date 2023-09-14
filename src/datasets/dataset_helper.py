@@ -26,12 +26,12 @@ class DatasetHelper(ABC):
         spatial_dims: int,
         data_dir: Path,
         augment: bool = True,
-        percentage_data: float = 1.0,
+        num_training_cases: int | None = None,
         percentage_slices: float = 1.0,
         sample_regions: list[str] = ("apex", "mid", "base"),
     ):
         self.data_dir = data_dir
-        self.percentage_data = percentage_data
+        self.num_training_cases = num_training_cases
 
         self.train_transforms, self.val_transforms = get_transforms(
             spatial_dims=spatial_dims,
@@ -59,12 +59,12 @@ class ACDCDatasetHelper(DatasetHelper):
         train_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.train_transforms,
-            percentage_data=self.percentage_data,
+            num_training_cases=self.num_training_cases,
         )
         val_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
-            percentage_data=self.percentage_data,
+            num_training_cases=self.num_training_cases,
         )
 
         return train_data, val_data
@@ -88,12 +88,12 @@ class MNMsDatasetHelper(DatasetHelper):
         train_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.train_transforms,
-            percentage_data=self.percentage_data,
+            num_training_cases=self.num_training_cases,
         )
         val_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
-            percentage_data=self.percentage_data,
+            num_training_cases=self.num_training_cases,
         )
 
         return train_data, val_data

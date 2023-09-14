@@ -13,17 +13,19 @@ class ACDCDataset(Dataset):
         data_dir: str | Path,
         transform: monai.transforms.Compose = None,
         full_volume: bool = False,
-        percentage_data: float = 1.0,
+        num_training_cases: int | None = None,
     ):
         """
         :param data_dir: Root data dir, in which "training" and "testing" folders are expected
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
-        :param percentage_data: The fraction of the data to use
+        :param num_training_cases: The number of cases to use for training
         """
         self.data_dir = Path(data_dir)
         self.patients = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
-        self.patients = self.patients[: int(len(self.patients) * percentage_data)]
+        if num_training_cases is not None:
+            self.patients = self.patients[:num_training_cases]
+
         self.transform = transform
         self.full_volume = full_volume
 
