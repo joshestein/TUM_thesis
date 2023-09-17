@@ -14,14 +14,18 @@ class MNMsDataset(Dataset):
         data_dir: str | Path,
         transform: monai.transforms.Compose = None,
         num_training_cases: int | None = None,
+        shuffle=True,
     ):
         """
         :param data_dir: Path to training/testing data
         :param transform: Any transforms that should be applied
         :param num_training_cases: The number of cases to use for training
+        :param shuffle: Whether to shuffle the dataset
         """
         self.data_dir = data_dir
         self.patients = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
+        if shuffle:
+            np.random.shuffle(self.patients)
         if num_training_cases is not None:
             self.patients = self.patients[:num_training_cases]
 
