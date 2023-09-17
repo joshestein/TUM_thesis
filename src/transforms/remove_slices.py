@@ -87,8 +87,7 @@ class RemoveSlicesd(MapTransform):
             samples_per_region = int(self.num_slices / len(self.sample_regions))
             indices = []
             for region in self.sample_regions:
-                start = region_slices[region][0]
-                end = region_slices[region][-1]
+                start, end = region_slices[region][0], region_slices[region][-1]
 
                 if end - start < samples_per_region:
                     print(f"Warning: Too few slices in region {region} - using all slices.")
