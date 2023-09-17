@@ -14,16 +14,21 @@ class ACDCDataset(Dataset):
         transform: monai.transforms.Compose = None,
         full_volume: bool = False,
         num_training_cases: int | None = None,
+        shuffle: bool = True,
     ):
         """
         :param data_dir: Root data dir, in which "training" and "testing" folders are expected
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
         :param num_training_cases: The number of cases to use for training
+        :param shuffle: Whether to shuffle the dataset
         """
         self.data_dir = Path(data_dir)
 
         patient_dirs = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
+        if shuffle:
+            np.random.shuffle(patient_dirs)
+
         self.patients, self.labels = [], []
         for patient_dir in patient_dirs:
             self.patients.extend(sorted(patient_dir.glob("*[0-9].nii.gz")))
