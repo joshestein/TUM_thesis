@@ -71,8 +71,16 @@ def main(
 
     num_samples_str = f"num_samples_{pos_sample_points}"
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+    num_training_cases_str = "" if num_training_cases is None else f"num_training_cases_{num_training_cases}"
+    num_slices_str = "" if num_slices is None else f"num_slices_{num_slices}"
 
-    out_dir = root_out_dir / "sam" / dataset_name / f"num_training_cases_{num_training_cases}" / num_samples_str
+    out_dir = (
+        root_out_dir
+        / "sam"
+        / dataset_name
+        / "_".join(filter(None, (num_training_cases_str, num_slices_str)))
+        / num_samples_str
+    )
     if neg_sample_points is not None:
         out_dir = out_dir / neg_samples_str
 
