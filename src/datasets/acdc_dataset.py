@@ -22,9 +22,16 @@ class ACDCDataset(Dataset):
         :param num_training_cases: The number of cases to use for training
         """
         self.data_dir = Path(data_dir)
-        self.patients = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
+
+        patient_dirs = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
+        self.patients, self.labels = [], []
+        for patient_dir in patient_dirs:
+            self.patients.extend(sorted(patient_dir.glob("*[0-9].nii.gz")))
+            self.labels.extend(sorted(patient_dir.glob("*_gt.nii.gz")))
+
         if num_training_cases is not None:
             self.patients = self.patients[:num_training_cases]
+            self.labels = self.labels[:num_training_cases]
 
         self.transform = transform
         self.full_volume = full_volume
@@ -33,16 +40,9 @@ class ACDCDataset(Dataset):
         return len(self.patients)
 
     def __getitem__(self, index):
-        patient_dir = self.patients[index]
-        patient = patient_dir.name
-
-        config = np.loadtxt(patient_dir / "Info.cfg", dtype=str, delimiter=":")
-        end_diastole = int(config[0, 1])
-        end_systole = int(config[1, 1])
-
-        randomised_phase = np.random.choice([end_diastole, end_systole])
-        image = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}.nii.gz")
-        label = nib.load(patient_dir / f"{patient}_frame{randomised_phase:02d}_gt.nii.gz")
+        image = nib.load(self.patients[index])
+        label = nib.load(self.labels[index])
+        patient = self.patients[index].parent.name
 
         sample = {
             "image": image.get_fdata(dtype=np.float32),
