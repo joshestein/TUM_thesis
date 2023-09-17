@@ -88,7 +88,7 @@ def main(
 
     wandb.init(
         project=f"sam_{dataset_name}",
-        name=f"{'_'.join(filter(None, (num_samples_str, neg_samples_str)))}",
+        name=f"{'_'.join(filter(None, (num_training_cases_str, num_slices_str, num_samples_str, neg_samples_str)))}",
         config=config["hyperparameters"],
         dir=log_dir,
         mode="disabled",
