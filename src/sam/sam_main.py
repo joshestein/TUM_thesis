@@ -54,7 +54,6 @@ def main(
         spatial_dims=spatial_dims,
         data_dir=data_dir,
         augment=augment,
-        percentage_slices=1.0,
         num_training_cases=num_training_cases,
     ).get_training_datasets()
 

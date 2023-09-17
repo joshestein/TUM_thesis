@@ -2,6 +2,7 @@ import math
 from typing import Hashable, Mapping
 
 import torch
+import wandb
 from monai.config import KeysCollection
 from monai.transforms import MapTransform
 
@@ -11,7 +12,7 @@ class RemoveSlicesd(MapTransform):
     should always be called before any padding functions.
 
     :param keys: Keys to remove slices from.
-    :param percentage_slices: Percentage of slices to keep from the data.
+    :param num_slices: Number of slices to use from the data. Setting to `None` will use all slices. Defaults to `None`.
     :param random_slices: Whether to remove random slices or slices from the center of the volume. Defaults to `True`.
     :param maintain_shape: Whether to maintain the shape of the data. If `True`, the removed slices will be filled with
             zeros. Defaults to `True`.
@@ -24,7 +25,7 @@ class RemoveSlicesd(MapTransform):
     def __init__(
         self,
         keys: KeysCollection,
-        percentage_slices: float,
+        num_slices: int | None = None,
         random_slices=True,
         maintain_shape=True,
         sample_regions: list[str] = ("apex", "mid", "base"),
@@ -32,7 +33,7 @@ class RemoveSlicesd(MapTransform):
     ):
         super().__init__(keys, allow_missing_keys=allow_missing_keys)
         self.keys = keys
-        self.percentage_slices = percentage_slices
+        self.num_slices = num_slices
         self.random_slices = random_slices
         self.maintain_shape = maintain_shape
 
@@ -43,11 +44,14 @@ class RemoveSlicesd(MapTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor]) -> dict[Hashable, torch.Tensor]:
         d = dict(data)
 
-        if self.percentage_slices == 1.0 and len(self.sample_regions) == 3:
+        if self.num_slices is None and len(self.sample_regions) == 3:
             return d
 
         value = next(iter(d.values()))
         mask = self._get_mask(value)
+
+        wandb.config["total_slices"] = value.shape[-1]
+        wandb.config["usable_slices"] = mask.sum()
 
         for key in self.key_iterator(d):
             if self.maintain_shape:
@@ -62,7 +66,9 @@ class RemoveSlicesd(MapTransform):
     def _get_mask(self, data: torch.Tensor):
         slices = data.shape[-1]
         slices_per_region = slices / 3  # We divide the entire volume into 3 regions: base, mid, apex
-        num_sample_slices = int(slices * self.percentage_slices)
+
+        if self.num_slices is None:
+            self.num_slices = slices
 
         region_slices = {
             "base": range(0, int(math.ceil(slices_per_region))),
@@ -72,13 +78,13 @@ class RemoveSlicesd(MapTransform):
 
         if self.random_slices:
             indices_to_sample = [index for region in self.sample_regions for index in region_slices[region]]
-            if len(indices_to_sample) < num_sample_slices:
+            if len(indices_to_sample) < self.num_slices:
                 print("Warning: Not enough slices to sample from. Using all slices in the sample regions.")
                 indices = indices_to_sample
             else:
-                indices = torch.randperm(len(indices_to_sample))[:num_sample_slices]
+                indices = torch.randperm(len(indices_to_sample))[: self.num_slices]
         else:
-            samples_per_region = int(num_sample_slices / len(self.sample_regions))
+            samples_per_region = int(self.num_slices / len(self.sample_regions))
             indices = []
             for region in self.sample_regions:
                 start = region_slices[region][0]

@@ -48,7 +48,7 @@ def main(dataset_name: str):
         return
 
     train_data, val_data = dataset(
-        spatial_dims=spatial_dims, data_dir=data_dir, augment=augment, percentage_slices=1.0
+        spatial_dims=spatial_dims, data_dir=data_dir, augment=augment
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(

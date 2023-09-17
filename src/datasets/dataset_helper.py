@@ -27,7 +27,7 @@ class DatasetHelper(ABC):
         data_dir: Path,
         augment: bool = True,
         num_training_cases: int | None = None,
-        percentage_slices: float = 1.0,
+        num_slices: int | None = None,
         sample_regions: list[str] = ("apex", "mid", "base"),
     ):
         self.data_dir = data_dir
@@ -36,7 +36,7 @@ class DatasetHelper(ABC):
         self.train_transforms, self.val_transforms = get_transforms(
             spatial_dims=spatial_dims,
             augment=augment,
-            percentage_slices=percentage_slices,
+            num_slices=num_slices,
             sample_regions=sample_regions,
         )
 
