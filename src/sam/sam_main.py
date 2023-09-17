@@ -20,6 +20,7 @@ def main(
     pos_sample_points: int,
     neg_sample_points: int | None = None,
     num_training_cases: int | None = None,
+    num_slices: int | None = None,
 ):
     root_dir = Path(os.getcwd())
     data_dir, log_dir, root_out_dir = setup_dirs(root_dir)
@@ -55,6 +56,7 @@ def main(
         data_dir=data_dir,
         augment=augment,
         num_training_cases=num_training_cases,
+        num_slices=num_slices,
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(
@@ -132,8 +134,20 @@ if __name__ == "__main__":
         type=int,
         required=False,
     )
+    parser.add_argument(
+        "--num_slices",
+        "-s",
+        type=int,
+        required=False,
+    )
     args = parser.parse_args()
 
     for dataset in ["acdc", "mnms"]:
-        for num_training_cases in [8, 24, 32, 48, 80, 160, 192, 240]:
-            main(dataset, args.pos_sample_points, args.neg_sample_points, num_training_cases)
+        for num_slices in [1, 2, 4, 5, 6, 8, 10, 13, 14, 16, 20]:
+            main(
+                dataset_name=dataset,
+                pos_sample_points=args.pos_sample_points,
+                neg_sample_points=args.neg_sample_points,
+                num_training_cases=None,
+                num_slices=num_slices,
+            )
