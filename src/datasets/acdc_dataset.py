@@ -50,20 +50,20 @@ class ACDCDataset(Dataset):
             "patient": patient,
         }
 
-        if self.full_volume:
-            original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
-            original_volume = original_volume.get_fdata(dtype=np.float32)
+        # if self.full_volume:
+        #     original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
+        #     original_volume = original_volume.get_fdata(dtype=np.float32)
 
-            # height, width, slices, time_steps = original_volume.shape
-            # num_resampled_slices = int(slices * self.percentage_slices)
-            #
-            # full_volume = np.ndarray((height, width, num_resampled_slices, time_steps), dtype=np.float32)
-            #
-            # # Sample slices for each volume at each time step
-            # for time_step in range(original_volume.shape[-1]):
-            #     full_volume[..., time_step] = remove_slices(original_volume[..., time_step], self.percentage_slices)
+        # height, width, slices, time_steps = original_volume.shape
+        # num_resampled_slices = int(slices * self.percentage_slices)
+        #
+        # full_volume = np.ndarray((height, width, num_resampled_slices, time_steps), dtype=np.float32)
+        #
+        # # Sample slices for each volume at each time step
+        # for time_step in range(original_volume.shape[-1]):
+        #     full_volume[..., time_step] = remove_slices(original_volume[..., time_step], self.percentage_slices)
 
-            sample["full_volume"] = original_volume
+        # sample["full_volume"] = original_volume
 
         if self.transform:
             sample = self.transform(sample)
