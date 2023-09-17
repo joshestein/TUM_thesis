@@ -150,12 +150,24 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    for dataset in ["acdc", "mnms"]:
-        for num_slices in [1, 2, 4, 5, 6, 8, 10, 13, 14, 16, 20]:
+    dataset_case_dict = {"acdc": [8, 24, 32, 48, 80, 160], "mnms": [8, 24, 32, 48, 80, 160, 192, 240]}
+    dataset_slice_dict = {
+        "acdc": [1, 2, 4, 5, 6, 8, 10, 13, 14, 16, 20],
+        "mnms": [1, 2, 4, 5, 6, 8, 10, 13, 14],
+    }
+
+    for dataset in ["mnms"]:
+        for num_cases in dataset_case_dict[dataset]:
             main(
                 dataset_name=dataset,
                 pos_sample_points=args.pos_sample_points,
                 neg_sample_points=args.neg_sample_points,
-                num_training_cases=None,
+                num_training_cases=num_cases,
+            )
+        for num_slices in dataset_slice_dict[dataset]:
+            main(
+                dataset_name=dataset,
+                pos_sample_points=args.pos_sample_points,
+                neg_sample_points=args.neg_sample_points,
                 num_slices=num_slices,
             )
