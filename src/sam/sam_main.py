@@ -134,6 +134,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    for dataset in ["27", "114"]:
+    for dataset in ["acdc", "mnms"]:
         for num_training_cases in [8, 24, 32, 48, 80, 160, 192, 240]:
             main(dataset, args.pos_sample_points, args.neg_sample_points, num_training_cases)
