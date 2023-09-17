@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import torch
 from monai.optimizers import LearningRateFinder
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from src.datasets.acdc_dataset import ACDCDataset
 from src.datasets.mnms_dataset import MNMsDataset
@@ -18,8 +19,8 @@ def get_train_dataloaders(
     validation_split: float = 0.8,
     shuffle=True,
 ):
-    # total_training_number = len(train_dataset)
-    # train_size = int(validation_split * total_training_number)
+    total_training_number = len(train_dataset)
+    train_size = int(validation_split * total_training_number)
     # val_size = total_training_number - train_size
 
     # train_d, validation_d = random_split(train_dataset, [train_size, val_size])
@@ -28,18 +29,19 @@ def get_train_dataloaders(
     # return train_loader, val_loader
 
     # TODO: separate train and validation datasets with separate transforms is not working
-    # indices = np.arange(total_training_number)
-    #
-    # if shuffle:
-    #     np.random.shuffle(indices)
-    #
-    # train_indices, val_indices = indices[:train_size], indices[train_size:]
+    indices = np.arange(total_training_number)
 
-    # train_dataset = Subset(train_dataset, [0])
-    # val_dataset = Subset(val_dataset, [0])
+    if shuffle:
+        np.random.shuffle(indices)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    train_indices, val_indices = indices[:train_size], indices[train_size:]
+
+    train_loader = DataLoader(
+        Subset(train_dataset, train_indices), batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
+    )
+    val_loader = DataLoader(
+        Subset(val_dataset, val_indices), batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
+    )
 
     return train_loader, val_loader
 
