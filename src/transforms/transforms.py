@@ -21,7 +21,7 @@ from src.transforms.remove_slices import RemoveSlicesd
 def get_transforms(
     spatial_dims: int,
     augment: bool = True,
-    percentage_slices: float = 1.0,
+    num_slices: int | None = None,
     sample_regions=("apex", "base", "mid"),
 ) -> (Compose, Compose):
     # TODO: once we start working with the full volume (not just ED and ES) we will need to update the transforms
@@ -38,7 +38,7 @@ def get_transforms(
         ResizeWithPadOrCropd(keys=keys, spatial_size=spatial_size, mode="constant"),
         RemoveSlicesd(
             keys=keys,
-            percentage_slices=percentage_slices,
+            num_slices=num_slices,
             sample_regions=sample_regions,
         ),
     ]
