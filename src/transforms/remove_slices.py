@@ -65,15 +65,15 @@ class RemoveSlicesd(MapTransform):
 
     def _get_mask(self, data: torch.Tensor):
         slices = data.shape[-1]
-        slices_per_region = slices / 3  # We divide the entire volume into 3 regions: base, mid, apex
+        slices_per_region = int(math.ceil(slices / 3))  # We divide the entire volume into 3 regions: base, mid, apex
 
         if self.num_slices is None:
             self.num_slices = slices
 
         region_slices = {
-            "base": range(0, int(math.ceil(slices_per_region))),
-            "mid": range(int(math.ceil(slices_per_region)), int(math.ceil(2 * slices_per_region))),
-            "apex": range(int(math.ceil(2 * slices_per_region)), slices),
+            "base": range(0, slices_per_region),
+            "mid": range(slices_per_region, 2 * slices_per_region),
+            "apex": range(2 * slices_per_region, slices),
         }
 
         if self.random_slices:
