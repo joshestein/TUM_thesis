@@ -15,6 +15,7 @@ class MNMsDataset(Dataset):
         transform: monai.transforms.Compose = None,
         num_training_cases: int | None = None,
         shuffle=True,
+        random_slice=False,
     ):
         """
         :param data_dir: Path to training/testing data
@@ -37,6 +38,7 @@ class MNMsDataset(Dataset):
             self.labels = self.labels[:num_training_cases]
 
         self.transform = transform
+        self.random_slice = random_slice
 
     def _get_cardiac_phase_indexes(self):
         """Reads the CSV metadata file to extract the end diastole and end systole frames for each volume.
@@ -81,9 +83,20 @@ class MNMsDataset(Dataset):
         label = nib.load(self.labels[index])
         patient = self.patients[index].parent.name
 
+        image = image.get_fdata(dtype=np.float32)
+        label = label.get_fdata(dtype=np.float32)
+
+        if self.random_slice:
+            slice_index = np.random.randint(0, image.shape[-1])
+            image = image[..., slice_index]
+            label = label[..., slice_index]
+
+            image = image[np.newaxis, ...]  # Add channel dimension
+            label = np.moveaxis(np.eye(label.max() + 1)[label], -1, 0)  # Convert to onehot, move channel to first dim
+
         sample = {
-            "image": image.get_fdata(dtype=np.float32),
-            "label": label.get_fdata(dtype=np.float32),
+            "image": image,
+            "label": label,
             "patient": patient,
         }
 

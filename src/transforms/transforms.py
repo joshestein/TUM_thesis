@@ -14,7 +14,6 @@ from monai.transforms import (
 )
 from monai.utils import InterpolateMode
 
-from src.transforms.random_slice import RandomSliced
 from src.transforms.remove_slices import RemoveSlicesd
 
 
@@ -63,10 +62,6 @@ def get_transforms(
             RandRotate90d(keys=keys, spatial_axes=(0, 1), prob=0.25),
             RandShiftIntensityd(keys=["image"], offsets=0.1, prob=1.0),
         ]
-
-    if spatial_dims == 2:
-        train_transforms += [RandomSliced(keys=keys)]
-        val_transforms += [RandomSliced(keys=keys)]
 
     # transposition_indices = (0, 1, 2) if spatial_dims == 2 else (0, 2, 3, 1)
 

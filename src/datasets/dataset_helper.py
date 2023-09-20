@@ -32,6 +32,7 @@ class DatasetHelper(ABC):
     ):
         self.data_dir = data_dir
         self.num_training_cases = num_training_cases
+        self.random_slice = spatial_dims == 2
 
         self.train_transforms, self.val_transforms = get_transforms(
             spatial_dims=spatial_dims,
@@ -60,11 +61,13 @@ class ACDCDatasetHelper(DatasetHelper):
             data_dir=data_dir,
             transform=self.train_transforms,
             num_training_cases=self.num_training_cases,
+            random_slice=self.random_slice,
         )
         val_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
             num_training_cases=self.num_training_cases,
+            random_slice=self.random_slice,
         )
 
         return train_data, val_data
@@ -73,6 +76,7 @@ class ACDCDatasetHelper(DatasetHelper):
         test_data = ACDCDataset(
             data_dir=self.data_dir / "testing",
             transform=self.val_transforms,
+            random_slice=self.random_slice,
         )
 
         return test_data
@@ -89,11 +93,13 @@ class MNMsDatasetHelper(DatasetHelper):
             data_dir=data_dir,
             transform=self.train_transforms,
             num_training_cases=self.num_training_cases,
+            random_slice=self.random_slice,
         )
         val_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
             num_training_cases=self.num_training_cases,
+            random_slice=self.random_slice,
         )
 
         return train_data, val_data
@@ -102,6 +108,7 @@ class MNMsDatasetHelper(DatasetHelper):
         test_data = MNMsDataset(
             data_dir=self.data_dir / "Testing",
             transform=self.val_transforms,
+            random_slice=self.random_slice,
         )
 
         return test_data
