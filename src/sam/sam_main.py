@@ -67,7 +67,9 @@ def main(
     )
 
     sam = setup_sam(root_dir, device)
-    optimizer = torch.optim.Adam(sam.mask_decoder.parameters(), lr=learning_rate)
+    optimizer = torch.optim.SGD(
+        sam.mask_decoder.parameters(), lr=learning_rate, weight_decay=3e-5, momentum=0.99, nesterov=True
+    )
 
     num_samples_str = f"num_samples_{pos_sample_points}"
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
