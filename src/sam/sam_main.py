@@ -5,7 +5,7 @@ from pprint import pprint
 
 import torch
 import wandb
-from monai.losses import DiceCELoss, DiceLoss
+from monai.losses import DiceCELoss
 from monai.utils import set_determinism
 
 from src.datasets.dataset_helper import DatasetHelperFactory
@@ -43,13 +43,7 @@ def main(
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-    if loss == "dice":
-        loss_function = DiceLoss(to_onehot_y=False, softmax=False, batch=True)
-    elif loss == "dice_ce":
-        loss_function = DiceCELoss(to_onehot_y=False, softmax=False, batch=True)
-    else:
-        return
+    loss_function = DiceCELoss(to_onehot_y=False, softmax=False, batch=True)
 
     train_data, val_data = dataset(
         spatial_dims=spatial_dims,
