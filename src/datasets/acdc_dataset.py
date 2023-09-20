@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import batchgenerators.transforms.abstract_transforms
 import monai.transforms
 import nibabel as nib
 import numpy as np
@@ -11,8 +12,8 @@ class ACDCDataset(Dataset):
     def __init__(
         self,
         data_dir: str | Path,
-        transform: monai.transforms.Compose = None,
-        full_volume: bool = False,
+        transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose = None,
+        full_volume=False,
         num_training_cases: int | None = None,
         shuffle=True,
         random_slice=False,
@@ -83,7 +84,9 @@ class ACDCDataset(Dataset):
 
         # sample["full_volume"] = original_volume
 
-        if self.transform:
+        if self.transform and isinstance(self.transform, monai.transforms.Compose):
             sample = self.transform(sample)
+        elif self.transform and isinstance(self.transform, batchgenerators.transforms.abstract_transforms.Compose):
+            sample = self.transform(**sample)
 
         return sample

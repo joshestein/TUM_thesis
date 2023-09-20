@@ -2,6 +2,7 @@ import csv
 import os
 from pathlib import Path
 
+import batchgenerators.transforms.abstract_transforms
 import monai.transforms
 import nibabel as nib
 import numpy as np
@@ -12,7 +13,7 @@ class MNMsDataset(Dataset):
     def __init__(
         self,
         data_dir: str | Path,
-        transform: monai.transforms.Compose = None,
+        transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose = None,
         num_training_cases: int | None = None,
         shuffle=True,
         random_slice=False,
@@ -100,7 +101,9 @@ class MNMsDataset(Dataset):
             "patient": patient,
         }
 
-        if self.transform:
+        if self.transform and isinstance(self.transform, monai.transforms.Compose):
             sample = self.transform(sample)
+        elif self.transform and isinstance(self.transform, batchgenerators.transforms.abstract_transforms.Compose):
+            sample = self.transform(**sample)
 
         return sample
