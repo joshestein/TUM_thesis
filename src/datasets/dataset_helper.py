@@ -3,6 +3,7 @@ from pathlib import Path
 
 from src.datasets.acdc_dataset import ACDCDataset
 from src.datasets.mnms_dataset import MNMsDataset
+from src.transforms.nnunet_transforms import get_nnunet_transforms
 from src.transforms.transforms import get_transforms
 
 
@@ -29,17 +30,20 @@ class DatasetHelper(ABC):
         num_training_cases: int | None = None,
         num_slices: int | None = None,
         sample_regions: list[str] = ("apex", "mid", "base"),
+        nnunet_transforms=False,
     ):
         self.data_dir = data_dir
         self.num_training_cases = num_training_cases
         self.random_slice = spatial_dims == 2
 
-        self.train_transforms, self.val_transforms = get_transforms(
-            spatial_dims=spatial_dims,
-            augment=augment,
-            num_slices=num_slices,
-            sample_regions=sample_regions,
-        )
+        if nnunet_transforms:
+            self.train_transforms, self.val_transforms = get_nnunet_transforms()
+        else:
+            self.train_transforms, self.val_transforms = get_transforms(
+                augment=augment,
+                num_slices=num_slices,
+                sample_regions=sample_regions,
+            )
 
     @abstractmethod
     def get_training_datasets(self):

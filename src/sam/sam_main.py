@@ -50,6 +50,7 @@ def main(
         augment=augment,
         num_training_cases=num_training_cases,
         num_slices=num_slices,
+        nnunet_transforms=True,
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(
