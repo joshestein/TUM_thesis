@@ -32,9 +32,8 @@ def main(
     augment = config["hyperparameters"].get("augment", True)
     batch_size = config["hyperparameters"].get("batch_size", 4)
     epochs = config["hyperparameters"].get("epochs", 100)
-    learning_rate = config["hyperparameters"].get("learning_rate", 1e-5)
-    loss = config["hyperparameters"].get("loss", "dice")
-    spatial_dims = config["hyperparameters"].get("spatial_dimensions", 3)
+    learning_rate = 1e-2
+    spatial_dims = 2
     validation_split = config["hyperparameters"].get("validation_split", 0.8)
 
     dataset_helper = DatasetHelperFactory(dataset_name=dataset_name)
