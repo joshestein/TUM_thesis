@@ -18,7 +18,6 @@ from src.transforms.remove_slices import RemoveSlicesd
 
 
 def get_transforms(
-    spatial_dims: int,
     augment: bool = True,
     num_slices: int | None = None,
     sample_regions=("apex", "base", "mid"),
