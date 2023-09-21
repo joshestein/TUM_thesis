@@ -126,7 +126,7 @@ def run_batch_inference(
         # TODO: because of skipping empty labels, the patient name is not correct
         for i in range(len(masks)):
             save_figure(
-                patient,
+                patient[i],
                 transformed_images[i],
                 boxes[i],
                 labels[i],
