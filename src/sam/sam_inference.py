@@ -183,7 +183,7 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     dataset_helper = dataset_helper.dataset(spatial_dims=spatial_dims, data_dir=data_dir, nnunet_transforms=True)
 
     test_data = dataset_helper.get_test_dataset()
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=8)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=0)
 
     figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
