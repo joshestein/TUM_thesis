@@ -152,7 +152,7 @@ if __name__ == "__main__":
         "mnms": [1, 2, 4, 5, 6, 8, 10, 13, 14],
     }
 
-    for dataset in ["mnms"]:
+    for dataset in ["acdc", "mnms"]:
         for num_cases in dataset_case_dict[dataset]:
             main(
                 dataset_name=dataset,
