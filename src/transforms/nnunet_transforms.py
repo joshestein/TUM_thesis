@@ -24,10 +24,7 @@ def get_nnunet_transforms():
     order_resampling_seg = 1
     border_val_seg = -1
 
-    train_transforms = []
-    val_transforms = []
-
-    train_transforms += [
+    train_transforms = [
         EnsureBatchDimension(),
         RenameTransform("image", "data", True),
         RenameTransform("label", "seg", True),
@@ -91,9 +88,9 @@ def get_nnunet_transforms():
         NumpyToTensor(["image", "label"], "float"),
     ]
 
-    val_transforms += [
+    val_transforms = [
         EnsureBatchDimension(),
-        RemoveLabelTransform(-1, 0),
+        RemoveLabelTransform(-1, 0, input_key="label", output_key="label"),
         RemoveBatchDimension(),
         NumpyToTensor(["image", "label"], "float"),
     ]
