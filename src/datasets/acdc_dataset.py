@@ -57,17 +57,24 @@ class ACDCDataset(Dataset):
 
         if self.random_slice:
             slice_index = np.random.randint(0, image.shape[-1])
-            image = image[..., slice_index]
-            label = label[..., slice_index]
+            # TODO: use slicer and only read random slice into memory
+            image_slice = image[..., slice_index]
+            label_slice = label[..., slice_index]
 
-            image = image[np.newaxis, ...]  # Add channel dimension
-            label = np.moveaxis(np.eye(label.max() + 1)[label], -1, 0)  # Convert to onehot, move channel to first dim
+            label_max = label_slice.max()
+            # Ensure we don't sample empty slices
+            while label_max == 0:
+                slice_index = np.random.randint(0, image.shape[-1])
+                image_slice = image[..., slice_index]
+                label_slice = label[..., slice_index]
+                label_max = label_slice.max()
 
-        sample = {
-            "image": image,
-            "label": label,
-            "patient": patient,
-        }
+            image = image_slice[np.newaxis, ...]  # Add channel dimension
+            # ACDC has 4 classes
+            label = np.moveaxis(np.eye(4)[label_slice], -1, 0)  # Convert to onehot, move channel to first dim
+            patient = f"{patient}_slice_{slice_index}"
+
+        sample = {"image": image, "label": label, "patient": patient}
 
         # if self.full_volume:
         #     original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
