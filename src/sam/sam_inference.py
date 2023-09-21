@@ -248,5 +248,5 @@ if __name__ == "__main__":
     for dataset in ["acdc", "mnms"]:
         for num_points in [2, 3, 5]:
             for use_bboxes in [True, False]:
-                for neg_points in [None, 1]:
+                for neg_points in [0, 1, 2]:
                     main(dataset, num_points, use_bboxes, neg_points)
