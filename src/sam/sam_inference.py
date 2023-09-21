@@ -124,6 +124,9 @@ def run_batch_inference(
             transformed_images = [cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2GRAY) for image in transformed_images]
 
         # TODO: because of skipping empty labels, the patient name is not correct
+        if not labels:
+            continue
+
         for i in range(len(masks)):
             save_figure(
                 patient[i],
