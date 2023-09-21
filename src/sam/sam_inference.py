@@ -196,7 +196,9 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
         pos_sample_points=pos_sample_points,
         neg_sample_points=neg_sample_points,
     )
-    # dice_scores = run_batch_inference(test_loader, sam, device, figure_dir, num_sample_points=num_sample_points)
+    # dice_scores = run_batch_inference(
+    #     test_loader, sam, device, figure_dir, pos_sample_points=pos_sample_points, neg_sample_points=neg_sample_points
+    # )
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
