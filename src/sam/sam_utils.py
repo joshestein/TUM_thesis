@@ -68,11 +68,11 @@ def get_sam_points(
         for i in range(num_classes):
             # Instead of sampling new negative points, we use the previously sampled positive points as negative points
             # for other classes.
-            random_index = np.random.randint(0, num_neg_points + 1)
-            sample = points_per_class[i][random_index]
+            random_indices = np.random.choice(num_pos_points, num_neg_points, replace=False)
+            sample = points_per_class[i][random_indices]
             for j in range(num_classes):
                 if i != j:
-                    points_per_class[j] = np.append(points_per_class[j], [sample], axis=0)
+                    points_per_class[j] = np.append(points_per_class[j], sample, axis=0)
 
     return np.array(points_per_class), labels_per_class
 
