@@ -44,7 +44,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np
 
 
 def get_sam_points(
-    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int | None
+    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int = 0
 ) -> (np.array, np.array):
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
@@ -52,34 +52,28 @@ def get_sam_points(
     # 2. If the centre of mass is part of the class, it is used as the initial sampling point.
     # 3. All remaining points are sampled from a uniform distribution across a flattened vector of the class.
 
-    # Negative points are sampled from the ventricles when sampling from the myocardium.
-    points_per_class, labels_per_class = [], []
+    # If negative points are given, we re-use the positively sampled points as negative points for other classes.
 
-    for class_index in range(num_classes):
-        sampled_points = sample_points((ground_truth == class_index).astype(int), num_pos_points)
-        ones = np.ones(num_pos_points)
+    points_per_class = [sample_points(ground_truth[class_index], num_pos_points) for class_index in range(num_classes)]
+    labels_per_class = np.concatenate(
+        (
+            np.ones((num_classes, num_pos_points), dtype=int),
+            np.zeros((num_classes, max(num_neg_points * num_classes - 1, 0)), dtype=int),
+        ),
+        axis=1,
+    )
 
-        # For the myocardium, we sample negative points from both ventricles as well
-        if class_index == 2 and num_neg_points is not None:
-            lv_points = sample_points((ground_truth == 1).astype(int), num_neg_points)
-            rv_points = sample_points((ground_truth == 3).astype(int), num_neg_points)
+    if num_neg_points > 0:
+        for i in range(num_classes):
+            # Instead of sampling new negative points, we use the previously sampled positive points as negative points
+            # for other classes.
+            random_index = np.random.randint(0, num_neg_points + 1)
+            sample = points_per_class[i][random_index]
+            for j in range(num_classes):
+                if i != j:
+                    points_per_class[j] = np.append(points_per_class[j], [sample], axis=0)
 
-            sampled_points = np.concatenate((sampled_points, lv_points, rv_points))
-            ones = np.concatenate((ones, np.zeros(num_neg_points), np.zeros(num_neg_points)))
-
-        points_per_class.append(sampled_points)
-        labels_per_class.append(ones)
-
-    try:
-        points_per_class = np.array(points_per_class)
-        labels_per_class = np.array(labels_per_class)
-    except:
-        # When using negative sampling, we will have jagged arrays.
-        # Use dtype=object to prevent errors.
-        points_per_class = np.array(points_per_class, dtype=object)
-        labels_per_class = np.array(labels_per_class, dtype=object)
-
-    return points_per_class, labels_per_class
+    return np.array(points_per_class), labels_per_class
 
 
 def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
