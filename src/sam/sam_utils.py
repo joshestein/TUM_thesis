@@ -1,3 +1,4 @@
+import os.path
 from pathlib import Path
 
 import cv2
@@ -350,11 +351,23 @@ def _calculate_dice(prediction, ground_truth, eps=1e-6):
     return dice
 
 
-def forward(sam: Sam, batched_input: list[dict[str, any]], multimask_output=False):
+def forward(
+    sam: Sam,
+    batched_input: list[dict[str, any]],
+    multimask_output=False,
+    embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
+):
     input_images = torch.stack([sam.preprocess(x["image"]) for x in batched_input], dim=0)
 
+    # TODO: for a batch size > 1, get all patients
+    patient = batched_input[0]["patient"]
+
     with torch.no_grad():
-        image_embeddings = sam.image_encoder(input_images)
+        if os.path.exists(embeddings_dir / f"{patient}.pt"):
+            image_embeddings = torch.load(embeddings_dir / f"{patient}.pt")
+        else:
+            image_embeddings = sam.image_encoder(input_images)
+            torch.save(image_embeddings, embeddings_dir / f"{patient}.pt")
 
     outputs = []
     for image_record, curr_embedding in zip(batched_input, image_embeddings):
