@@ -207,7 +207,7 @@ def get_batch_predictions(
                     "point_coords": point,
                     "point_labels": point_label,
                     "original_size": image.shape[1:],
-                    "gt": label,
+                    "patient": patients[index],
                 }
             )
 
@@ -219,9 +219,9 @@ def get_batch_predictions(
     batched_output = forward(sam, batched_input, multimask_output=False)
 
     masks = collate_mask_outputs(batched_output, num_classes)
-    ground_truths, bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
+    bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
 
-    return masks, ground_truths, bboxes, points, point_labels, transformed_images
+    return masks, labels, bboxes, points, point_labels, transformed_images
 
 
 def collate_mask_outputs(batched_output, num_classes: int):
@@ -234,9 +234,8 @@ def collate_mask_outputs(batched_output, num_classes: int):
 
 
 def collate_batch_inputs(batched_input, num_classes: int):
-    ground_truths, bboxes, points, point_labels, transformed_images = [], [], [], [], []
+    bboxes, points, point_labels, transformed_images = [], [], [], []
     for i in range(0, len(batched_input), num_classes):
-        collated_gts = [batched_input[i + class_index]["gt"] for class_index in range(num_classes)]
         collated_boxes = [
             batched_input[i + class_index]["boxes"][0] if batched_input[i + class_index]["boxes"] is not None else None
             for class_index in range(num_classes)
@@ -253,16 +252,14 @@ def collate_batch_inputs(batched_input, num_classes: int):
             else None
             for class_index in range(num_classes)
         ]
-        ground_truths.append(torch.stack(collated_gts))
         bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
         points.append(collated_points)
         point_labels.append(collated_point_labels)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
-    ground_truths = torch.stack(ground_truths)
     transformed_images = torch.stack(transformed_images)
 
-    return ground_truths, bboxes, points, point_labels, transformed_images
+    return bboxes, points, point_labels, transformed_images
 
 
 def save_figure(
