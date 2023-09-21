@@ -89,11 +89,21 @@ class MNMsDataset(Dataset):
 
         if self.random_slice:
             slice_index = np.random.randint(0, image.shape[-1])
-            image = image[..., slice_index]
-            label = label[..., slice_index]
+            # TODO: use slicer and only read random slice into memory
+            image_slice = image[..., slice_index]
+            label_slice = label[..., slice_index].astype(int)
 
-            image = image[np.newaxis, ...]  # Add channel dimension
-            label = np.moveaxis(np.eye(4)[label], -1, 0)  # Convert to onehot, move channel to first dim
+            label_max = label_slice.max()
+            # Ensure we don't sample empty slices
+            while label_max == 0:
+                slice_index = np.random.randint(0, image.shape[-1])
+                image_slice = image[..., slice_index]
+                label_slice = label[..., slice_index].astype(int)
+                label_max = label_slice.max()
+
+            image = image_slice[np.newaxis, ...]  # Add channel dimension
+            # MNMs has 4 classes
+            label = np.moveaxis(np.eye(4)[label_slice], -1, 0)  # Convert to onehot, move channel to first dim
             patient = f"{patient}_slice_{slice_index}"
 
         sample = {

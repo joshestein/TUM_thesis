@@ -59,14 +59,14 @@ class ACDCDataset(Dataset):
             slice_index = np.random.randint(0, image.shape[-1])
             # TODO: use slicer and only read random slice into memory
             image_slice = image[..., slice_index]
-            label_slice = label[..., slice_index]
+            label_slice = label[..., slice_index].astype(int)
 
             label_max = label_slice.max()
             # Ensure we don't sample empty slices
             while label_max == 0:
                 slice_index = np.random.randint(0, image.shape[-1])
                 image_slice = image[..., slice_index]
-                label_slice = label[..., slice_index]
+                label_slice = label[..., slice_index].astype(int)
                 label_max = label_slice.max()
 
             image = image_slice[np.newaxis, ...]  # Add channel dimension
