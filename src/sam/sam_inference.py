@@ -91,7 +91,13 @@ def run_inference(
 
 
 def run_batch_inference(
-    test_loader: DataLoader, sam: Sam, device: str | torch.device, out_dir: Path, num_sample_points: int, num_classes=4
+    test_loader: DataLoader,
+    sam: Sam,
+    device: str | torch.device,
+    out_dir: Path,
+    pos_sample_points: int | None = None,
+    neg_sample_points: int = 0,
+    num_classes=4,
 ):
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
@@ -110,7 +116,8 @@ def run_batch_inference(
                 inputs=inputs,
                 labels=labels,
                 patients=patient,
-                pos_sample_points=num_sample_points,
+                pos_sample_points=pos_sample_points,
+                neg_sample_points=neg_sample_points,
                 num_classes=num_classes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
