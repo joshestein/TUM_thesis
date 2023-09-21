@@ -58,7 +58,8 @@ def get_sam_points(
     labels_per_class = np.concatenate(
         (
             np.ones((num_classes, num_pos_points), dtype=int),
-            np.zeros((num_classes, max(num_neg_points * num_classes - 1, 0)), dtype=int),
+            # -1 since we sample negatively from the N-1 classes
+            np.zeros((num_classes, num_neg_points * (num_classes - 1)), dtype=int),
         ),
         axis=1,
     )
