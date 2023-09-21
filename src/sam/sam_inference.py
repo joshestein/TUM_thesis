@@ -151,7 +151,7 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
 
     wandb.init(
-        project=f"sam_inference",
+        project=f"sam_baseline_inference_{dataset}",
         name=f"{dataset}_{'_'.join(filter(None, (num_samples_str, use_bbox_str, neg_samples_str)))}",
         config={"dataset": dataset, "num_sample_points": pos_sample_points},
         mode="disabled",
