@@ -18,7 +18,7 @@ from src.utils import get_train_dataloaders, setup_dirs
 def main(
     dataset_name: str,
     pos_sample_points: int,
-    neg_sample_points: int | None = None,
+    neg_sample_points: int = 0,
     num_training_cases: int | None = None,
     num_slices: int | None = None,
 ):
@@ -66,7 +66,7 @@ def main(
     )
 
     num_samples_str = f"num_samples_{pos_sample_points}"
-    neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+    neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
     num_training_cases_str = "" if num_training_cases is None else f"num_training_cases_{num_training_cases}"
     num_slices_str = "" if num_slices is None else f"num_slices_{num_slices}"
 
@@ -77,7 +77,7 @@ def main(
         / "_".join(filter(None, (num_training_cases_str, num_slices_str)))
         / num_samples_str
     )
-    if neg_sample_points is not None:
+    if neg_samples_str:
         out_dir = out_dir / neg_samples_str
 
     os.makedirs(out_dir, exist_ok=True)

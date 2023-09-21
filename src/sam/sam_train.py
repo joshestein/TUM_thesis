@@ -22,7 +22,7 @@ def train(
     out_dir: str | os.PathLike,
     pos_sample_points: int,
     metric_handler: MetricHandler,
-    neg_sample_points: int | None = None,
+    neg_sample_points: int = 0,
 ):
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
@@ -98,7 +98,7 @@ def get_epoch_loss(
     device: str | torch.device,
     pos_sample_points: int,
     num_classes: int = 4,
-    neg_sample_points: int | None = None,
+    neg_sample_points: int = 0,
 ):
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
 
@@ -131,7 +131,7 @@ def validate(
     loss_function: torch.nn.Module,
     metric_handler: MetricHandler,
     pos_sample_points: int,
-    neg_sample_points: int | None,
+    neg_sample_points: int = 0,
 ):
     sam.eval()
     with torch.no_grad():
@@ -167,7 +167,7 @@ def get_validation_loss(
     device: str | torch.device,
     metric_handler: MetricHandler,
     pos_sample_points: int,
-    neg_sample_points: int | None,
+    neg_sample_points: int = 0,
 ):
     val_inputs, val_labels, val_patients = (
         val_data["image"].to(device),

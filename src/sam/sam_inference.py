@@ -37,7 +37,7 @@ def run_inference(
     device: str | torch.device,
     out_dir: Path,
     pos_sample_points: int,
-    neg_sample_points: int | None = None,
+    neg_sample_points: int = 0,
     use_bboxes: bool = True,
     use_points: bool = True,
     num_classes=4,
@@ -145,10 +145,10 @@ def run_batch_inference(
     return torch.tensor(dice_scores)
 
 
-def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int | None = None):
+def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int = 0):
     num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "" if use_bboxes else "no_bboxes"
-    neg_samples_str = "" if neg_sample_points is None else f"neg_samples_{neg_sample_points}"
+    neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
 
     wandb.init(
         project=f"sam_baseline_inference_{dataset}",
@@ -165,7 +165,7 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     out_dir = out_dir / "sam" / f"{dataset}" / num_samples_str
     if not use_bboxes:
         out_dir = out_dir / "no_bboxes"
-    if neg_sample_points is not None:
+    if neg_sample_points > 0:
         out_dir = out_dir / neg_samples_str
 
     with open(root_dir / "config.toml", "rb") as file:

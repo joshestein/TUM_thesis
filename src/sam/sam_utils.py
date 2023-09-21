@@ -152,7 +152,7 @@ def get_batch_predictions(
     labels: torch.tensor,
     patients: torch.tensor,
     pos_sample_points: int,
-    neg_sample_points: int | None = None,
+    neg_sample_points: int = 0,
     use_bboxes: bool = True,
     num_classes=4,
     transform=None,
