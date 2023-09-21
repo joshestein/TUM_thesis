@@ -94,6 +94,7 @@ class MNMsDataset(Dataset):
 
             image = image[np.newaxis, ...]  # Add channel dimension
             label = np.moveaxis(np.eye(label.max() + 1)[label], -1, 0)  # Convert to onehot, move channel to first dim
+            patient = f"{patient}_slice_{slice_index}"
 
         sample = {
             "image": image,
