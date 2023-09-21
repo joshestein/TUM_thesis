@@ -4,7 +4,6 @@ import tomllib
 from pathlib import Path
 
 import cv2
-import numpy as np
 import torch
 import wandb
 from monai.utils import set_determinism
