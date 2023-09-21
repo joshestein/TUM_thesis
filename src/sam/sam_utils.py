@@ -173,23 +173,20 @@ def get_batch_predictions(
         transform = ResizeLongestSide(sam.image_encoder.img_size)
 
     for index, image in enumerate(inputs):
-        ground_truth = labels[index][0].permute(1, 0)  # Swap W, H
-        prepared_image = prepare_image(image, transform, sam.device)
-        onehot_labels = [
-            torch.as_tensor((ground_truth == class_index), dtype=torch.int, device=sam.device)
-            for class_index in range(num_classes)
-        ]
-
-        if any(torch.count_nonzero(label) == 0 for label in onehot_labels):
+        if any(torch.count_nonzero(labels[index][c]) == 0 for c in range(num_classes)):
             print(f"Skipping patient {patients[index]} as it contains empty labels.")
             continue
+
+        print(f"Evaluating {patients[index]}")
+        ground_truth = torch.moveaxis(labels[index], (1, 2), (2, 1))
+        prepared_image = prepare_image(image, transform, sam.device)
 
         points, point_labels = get_sam_points(
             ground_truth.cpu().numpy(), num_classes, pos_sample_points, neg_sample_points
         )
 
         # Get bounding box and points for each class of one-hot encoded mask
-        for i, label in enumerate(onehot_labels):
+        for i, label in enumerate(ground_truth):
             bbox = get_bounding_box(label) if use_bboxes else None
             point, point_label = None, None
 

@@ -49,24 +49,23 @@ def run_inference(
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         patient = batch["patient"][0]
 
+        if any(torch.count_nonzero(labels[c]) == 0 for c in range(num_classes)):
+            print(f"Skipping {patient} as it contains empty labels.")
+            continue
+
         print(f"Predicting patient: {patient}")
         inputs = convert_to_normalized_colour(inputs)
         predictor.set_image(inputs)
 
-        labels = labels[0].permute(1, 0)  # Swap W, H
+        labels = labels.permute(0, 2, 1)  # Swap W, H
         labels = labels.cpu().numpy()
 
         bboxes, masks = [], []
-        labels_per_class = [np.array((labels == class_index), dtype=np.uint8) for class_index in range(num_classes)]
-        if any(np.count_nonzero(label) == 0 for label in labels_per_class):
-            print(f"Skipping {patient} as it contains empty labels.")
-            continue
-
         points, point_labels = (
             get_sam_points(labels, num_classes, pos_sample_points, neg_sample_points) if use_points else (None, None)
         )
 
-        for i, label in enumerate(labels_per_class):
+        for i, label in enumerate(labels):
             bbox = get_numpy_bounding_box(label) if use_bboxes else None
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=points[i], point_labels=point_labels[i], multimask_output=False
@@ -78,7 +77,7 @@ def run_inference(
             patient_name=patient,
             inputs=inputs,
             bboxes=bboxes,
-            labels=labels_per_class,
+            labels=labels,
             masks=masks,
             out_dir=out_dir,
             num_classes=num_classes,
@@ -86,7 +85,7 @@ def run_inference(
             point_labels=point_labels,
             save_to_wandb=True,
         )
-        dice_scores.append(calculate_dice_for_classes(masks, labels_per_class, num_classes=num_classes))
+        dice_scores.append(calculate_dice_for_classes(masks, labels, num_classes=num_classes))
 
     return torch.tensor(dice_scores)
 
