@@ -85,7 +85,7 @@ def train(
                 f"at epoch: {metric_handler.best_epoch}"
             )
 
-        scheduler.step(epoch_loss)
+        scheduler.step()
 
     return epoch_loss_values
 
