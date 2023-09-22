@@ -127,13 +127,13 @@ def get_epoch_loss(
     optimizer.zero_grad()
     outputs = model(inputs)
 
-    if len(inputs.shape) == 5:
-        # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
-        # This is because 3D layers in Pytorch expect D before H, W
-        # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D (put depth at the last dimension).
-        # We permute after passing through the model.
-        outputs = outputs.permute(0, 1, 3, 4, 2)
-        labels = labels.permute(0, 1, 3, 4, 2)
+    # if len(inputs.shape) == 5:
+    #     # In our transforms, we use `Transpose` to rearrange into B, C, D, H, W
+    #     # This is because 3D layers in Pytorch expect D before H, W
+    #     # However, for Monai metrics and loss, we need to rearrange to B, C, H, W, D (put depth at the last dimension).
+    #     # We permute after passing through the model.
+    #     outputs = outputs.permute(0, 1, 3, 4, 2)
+    #     labels = labels.permute(0, 1, 3, 4, 2)
 
     loss = loss_function(outputs, labels)
     loss.backward()
@@ -152,10 +152,10 @@ def get_validation_loss(
     val_inputs, val_labels = val_data["image"].to(device), val_data["label"].to(device)
     val_outputs = model(val_inputs)
 
-    if len(val_inputs.shape) == 5:
-        # Permute after passing through the model.
-        val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
-        val_labels = val_labels.permute(0, 1, 3, 4, 2)
+    # if len(val_inputs.shape) == 5:
+    #     # Permute after passing through the model.
+    #     val_outputs = val_outputs.permute(0, 1, 3, 4, 2)
+    #     val_labels = val_labels.permute(0, 1, 3, 4, 2)
 
     val_loss = compute_val_loss_and_metrics(
         inputs=val_inputs,
