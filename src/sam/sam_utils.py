@@ -207,7 +207,7 @@ def get_batch_predictions(
 
     # The gradients are disabled in Sam with the decorator @torch.no_grad.
     # We re-write the forward pass here to enable gradients.
-    batched_output = forward(sam, batched_input, multimask_output=False)
+    batched_output = forward(sam, batched_input, num_classes, multimask_output=False)
 
     bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
