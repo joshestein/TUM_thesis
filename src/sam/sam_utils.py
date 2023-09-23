@@ -158,6 +158,7 @@ def get_batch_predictions(
     pos_sample_points: int,
     neg_sample_points: int = 0,
     use_bboxes: bool = True,
+    inference: bool = False,
     transform=None,
 ):
     """Given inputs and labels, runs inference on all examples in the batch.
@@ -208,7 +209,13 @@ def get_batch_predictions(
 
     # The gradients are disabled in Sam with the decorator @torch.no_grad.
     # We re-write the forward pass here to enable gradients.
-    batched_output = forward(sam, batched_input, num_classes=labels[0].shape[0], multimask_output=False)
+    batched_output = forward(
+        sam=sam,
+        batched_input=batched_input,
+        num_classes=labels[0].shape[0],
+        inference=inference,
+        multimask_output=False,
+    )
 
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
 
@@ -308,6 +315,7 @@ def forward(
     sam: Sam,
     batched_input: list[dict[str, Any]],
     num_classes: int,
+    inference=False,
     multimask_output=False,
 ):
     image_embeddings = get_and_save_embeddings(sam, batched_input, num_classes)
@@ -338,12 +346,10 @@ def forward(
             input_size=image_record["image"].shape[-2:],
             original_size=image_record["original_size"],
         )
-        # masks = threshold(masks, sam.mask_threshold, 0)
-        # masks = masks > sam.mask_threshold
-        # Don't threshold, it's not differentiable.
-        # It makes sense for prediction, but not for training.
-        # TODO: should this be softmax?
-        masks = torch.sigmoid(masks)
+
+        if inference:
+            masks = masks > sam.mask_threshold
+
         outputs.append(
             {
                 "masks": masks,

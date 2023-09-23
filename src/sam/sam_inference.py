@@ -112,6 +112,7 @@ def run_batch_inference(
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
                 use_bboxes=use_bboxes,
+                inference=True,
             )
 
             # Convert to numpy before saving

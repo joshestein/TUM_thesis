@@ -42,7 +42,7 @@ def main(
     set_determinism(seed=config["hyperparameters"]["seed"])
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    loss_function = DiceCELoss(to_onehot_y=False, softmax=False, batch=True)
+    loss_function = DiceCELoss(to_onehot_y=False, softmax=False, sigmoid=True, batch=True)
 
     train_data, val_data = dataset(
         spatial_dims=spatial_dims,
