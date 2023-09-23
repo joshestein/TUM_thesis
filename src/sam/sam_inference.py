@@ -92,7 +92,8 @@ def run_batch_inference(
     out_dir: Path,
     pos_sample_points: int,
     neg_sample_points: int = 0,
-    num_classes=4,
+    use_bboxes: bool = True,
+    num_classes: int = 4,
 ):
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
@@ -114,6 +115,7 @@ def run_batch_inference(
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
                 num_classes=num_classes,
+                use_bboxes=use_bboxes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
 
@@ -189,7 +191,13 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
         neg_sample_points=neg_sample_points,
     )
     # dice_scores = run_batch_inference(
-    #     test_loader, sam, device, figure_dir, pos_sample_points=pos_sample_points, neg_sample_points=neg_sample_points
+    #     test_loader,
+    #     sam,
+    #     device,
+    #     figure_dir,
+    #     use_bboxes=use_bboxes,
+    #     pos_sample_points=pos_sample_points,
+    #     neg_sample_points=neg_sample_points,
     # )
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Dice per class: {mean_fg_dice}")
