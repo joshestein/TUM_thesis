@@ -94,7 +94,7 @@ def run_batch_inference(
     sam: Sam,
     device: str | torch.device,
     out_dir: Path,
-    pos_sample_points: int | None = None,
+    pos_sample_points: int,
     neg_sample_points: int = 0,
     num_classes=4,
 ):
