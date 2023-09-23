@@ -60,7 +60,7 @@ class ACDCDataset(Dataset):
 
         if self.random_slice:
             image, label, slice_index = self._extract_slice(image, label)
-            patient = f"{patient}_{slice_index}"
+            patient = f"{patient}_slice_{slice_index}"
 
         sample = {"image": image, "label": label, "patient": patient}
 
