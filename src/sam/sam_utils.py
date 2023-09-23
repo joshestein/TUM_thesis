@@ -207,18 +207,21 @@ def get_batch_predictions(
 
         bboxes.append(image_bbox)
 
+    num_classes = labels[0].shape[0]
     # The gradients are disabled in Sam with the decorator @torch.no_grad.
     # We re-write the forward pass here to enable gradients.
     batched_output = forward(
         sam=sam,
         batched_input=batched_input,
-        num_classes=labels[0].shape[0],
+        num_classes=num_classes,
         inference=inference,
         multimask_output=False,
     )
 
-    masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
-
+    masks = [
+        torch.stack([item["masks"].squeeze() for item in batched_output[i : i + num_classes]])
+        for i in range(0, len(batched_output), num_classes)
+    ]
     return masks, bboxes, points, point_labels
 
 
@@ -321,7 +324,7 @@ def forward(
     image_embeddings = get_and_save_embeddings(sam, batched_input, num_classes)
 
     outputs = []
-    for image_record, curr_embedding in zip(batched_input, image_embeddings):
+    for index, image_record in enumerate(batched_input):
         if "point_coords" in image_record:
             points = (image_record["point_coords"], image_record["point_labels"])
         else:
@@ -334,6 +337,7 @@ def forward(
                 masks=image_record.get("mask_inputs", None),
             )
 
+        curr_embedding = image_embeddings[index // num_classes]
         low_res_masks, iou_predictions = sam.mask_decoder(
             image_embeddings=curr_embedding,
             image_pe=sam.prompt_encoder.get_dense_pe(),
@@ -367,6 +371,7 @@ def get_and_save_embeddings(
     embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
     image_embeddings = []
+    # TODO: we are computting the embeddings one-by-one. We should compute them all in one go.
     with torch.no_grad():
         for i in range(0, len(batched_input), num_classes):
             patient = batched_input[i]["patient"]
@@ -379,8 +384,6 @@ def get_and_save_embeddings(
             else:
                 embedding = torch.load(embeddings_path)
 
-            # Expand the embedding to match the number of classes. The expanded embeddings are re-used for each
-            # prediction class.
-            image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
+            image_embeddings.append(embedding)
 
     return image_embeddings
