@@ -162,8 +162,10 @@ def get_batch_predictions(
     For each example, returns the predicted masks, ground truth masks and bounding boxes.
 
     Note that for each input image, there are num_classes predictions, one for each class.
+
+    Expects labels to be in a one-hot format.
     """
-    batched_input, points, point_labels = [], [], []
+    batched_input, points, point_labels, bboxes = [], [], [], []
     if transform is None:
         transform = ResizeLongestSide(sam.image_encoder.img_size)
 
@@ -174,16 +176,14 @@ def get_batch_predictions(
         image_points, image_point_labels = get_sam_points(
             ground_truth.cpu().numpy(), num_classes, pos_sample_points, neg_sample_points
         )
+        image_bbox = []
         points.append(image_points)
         point_labels.append(image_point_labels)
 
         # Get bounding box and points for each class of one-hot encoded mask
         for i, label in enumerate(ground_truth):
-            if use_bboxes is not None:
-                bbox = get_bounding_box(label)
-                bbox = transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
-            else:
-                bbox = None
+            bbox = get_bounding_box(label) if use_bboxes else None
+            image_bbox.append(bbox)
 
             point = transform.apply_coords_torch(torch.as_tensor(image_points[i], device=sam.device), image.shape[1:])
             point_label = torch.as_tensor(image_point_labels[i], device=sam.device)
@@ -192,7 +192,9 @@ def get_batch_predictions(
             batched_input.append(
                 {
                     "image": prepared_image if i == 0 else None,
-                    "boxes": bbox,
+                    "boxes": transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
+                    if bbox
+                    else None,
                     "point_coords": point,
                     "point_labels": point_label,
                     "original_size": image.shape[1:],
@@ -200,29 +202,15 @@ def get_batch_predictions(
                 }
             )
 
+        bboxes.append(image_bbox)
+
     # The gradients are disabled in Sam with the decorator @torch.no_grad.
     # We re-write the forward pass here to enable gradients.
     batched_output = forward(sam, batched_input, num_classes, multimask_output=False)
 
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
-    bboxes = collate_bboxes(batched_input, num_classes)
 
     return masks, bboxes, points, point_labels
-
-
-def collate_bboxes(batched_input, num_classes: int):
-    bboxes, points, point_labels = [], [], []
-    for i in range(0, len(batched_input), num_classes):
-        if batched_input[i]["boxes"] is not None:
-            collated_boxes = torch.stack(
-                [batched_input[i + class_index]["boxes"][0] for class_index in range(num_classes)]
-            )
-        else:
-            collated_boxes = [None] * num_classes
-
-        bboxes.append(collated_boxes)
-
-    return bboxes
 
 
 def save_figure(
