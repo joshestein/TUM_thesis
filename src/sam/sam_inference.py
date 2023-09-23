@@ -48,10 +48,6 @@ def run_inference(
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         patient = batch["patient"][0]
 
-        if any(torch.count_nonzero(labels[c]) == 0 for c in range(num_classes)):
-            print(f"Skipping {patient} as it contains empty labels.")
-            continue
-
         print(f"Predicting patient: {patient}")
         inputs = convert_to_normalized_colour(inputs)
         predictor.set_image(inputs)
@@ -124,10 +120,6 @@ def run_batch_inference(
             masks = [mask.cpu().numpy() for mask in masks]
             labels = [label.cpu().numpy() for label in labels]
             transformed_images = [cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2GRAY) for image in transformed_images]
-
-        # TODO: because of skipping empty labels, the patient name is not correct
-        if not labels:
-            continue
 
         for i in range(len(masks)):
             save_figure(

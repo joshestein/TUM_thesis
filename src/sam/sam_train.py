@@ -112,9 +112,6 @@ def get_epoch_loss(
         neg_sample_points=neg_sample_points,
         num_classes=num_classes,
     )
-    if predictions == [] and labels == []:
-        # Empty batch due to all labels being incomplete
-        return -1
 
     optimizer.zero_grad()
     loss = loss_function(predictions, labels)
@@ -150,9 +147,6 @@ def validate(
                 neg_sample_points=neg_sample_points,
             )
 
-            if validation_loss == -1:
-                continue
-
         validation_loss /= step
         wandb.log({"validation_loss": validation_loss})
         print(f"validation_loss: {validation_loss:.4f}")
@@ -182,9 +176,6 @@ def get_validation_loss(
         pos_sample_points=pos_sample_points,
         neg_sample_points=neg_sample_points,
     )
-
-    if val_outputs == [] and val_labels == []:
-        return -1
 
     val_loss = compute_val_loss_and_metrics(
         inputs=val_inputs,
