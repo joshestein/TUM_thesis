@@ -62,8 +62,8 @@ def run_inference(
 
         for i, label in enumerate(labels):
             bbox = get_numpy_bounding_box(label) if use_bboxes else None
-            point_coord = points[i] if points else None
-            point_label = point_labels[i] if point_labels else None
+            point_coord = points[i] if points is not None else None
+            point_label = point_labels[i] if point_labels is not None else None
             mask, _, _ = predictor.predict(
                 box=bbox, point_coords=point_coord, point_labels=point_label, multimask_output=False
             )
