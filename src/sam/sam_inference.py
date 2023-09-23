@@ -51,7 +51,6 @@ def run_inference(
         inputs = convert_to_normalized_colour(inputs)
         predictor.set_image(inputs)
 
-        labels = labels.permute(0, 2, 1)  # Swap W, H
         labels = labels.cpu().numpy()
 
         bboxes, masks = [], []

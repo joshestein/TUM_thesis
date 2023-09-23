@@ -135,7 +135,7 @@ def show_box(box, ax):
 
 def convert_to_normalized_colour(image):
     """Convert to colour, scale to 0-255, convert to uint8"""
-    image = cv2.cvtColor(image.permute(2, 1, 0).cpu().numpy(), cv2.COLOR_GRAY2RGB)
+    image = cv2.cvtColor(image.permute(1, 2, 0).cpu().numpy(), cv2.COLOR_GRAY2RGB)
     image = ((image - image.min()) * (1 / (image.max() - image.min()) * 255)).astype("uint8")
     return image
 
@@ -166,10 +166,6 @@ def get_batch_predictions(
     batched_input, points, point_labels = [], [], []
     if transform is None:
         transform = ResizeLongestSide(sam.image_encoder.img_size)
-
-    # Swap width and height
-    # B x C x W x H -> B x C x H x W
-    labels = torch.moveaxis(labels, (2, 3), (3, 2))
 
     for index, image in enumerate(inputs):
         ground_truth = labels[index]
