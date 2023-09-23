@@ -11,7 +11,7 @@ from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
 
-def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 10) -> list[torch.Tensor]:
+def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 10) -> list[int]:
     # get bounding box from mask
     y_indices, x_indices = torch.where(ground_truth_map > 0)
     x_min, x_max = torch.min(x_indices), torch.max(x_indices)
