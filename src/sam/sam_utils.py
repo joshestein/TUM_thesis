@@ -167,13 +167,12 @@ def get_batch_predictions(
     if transform is None:
         transform = ResizeLongestSide(sam.image_encoder.img_size)
 
-    for index, image in enumerate(inputs):
-        if any(torch.count_nonzero(labels[index][c]) == 0 for c in range(num_classes)):
-            print(f"Skipping patient {patients[index]} as it contains empty labels.")
-            continue
+    # Swap width and height
+    # B x C x W x H -> B x C x H x W
+    labels = torch.moveaxis(labels, (2, 3), (3, 2))
 
-        print(f"Evaluating {patients[index]}")
-        ground_truth = torch.moveaxis(labels[index], (1, 2), (2, 1))
+    for index, image in enumerate(inputs):
+        ground_truth = labels[index]
         prepared_image = prepare_image(image, transform, sam.device)
 
         points, point_labels = get_sam_points(
