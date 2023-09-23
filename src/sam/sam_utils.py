@@ -81,7 +81,7 @@ def get_sam_points(
 
 
 def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
-    mask = mask.T  # Since we swap the W and H during the dataloading, we reverse that swap here.
+    mask = mask.T  # Center of mass returns R, C. We swap so that we get C, R, which corresponds to X, Y.
     center_of_mass = ndimage.measurements.center_of_mass(mask)
     center_of_mass = [int(i) for i in center_of_mass]
     if mask[*center_of_mass] == 1:
