@@ -343,20 +343,23 @@ def _calculate_dice(prediction, ground_truth, eps=1e-6):
 def forward(
     sam: Sam,
     batched_input: list[dict[str, any]],
+    num_classes: int,
     multimask_output=False,
     embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
-    input_images = torch.stack([sam.preprocess(x["image"]) for x in batched_input], dim=0)
-
-    # TODO: for a batch size > 1, get all patients
-    patient = batched_input[0]["patient"]
-
-    with torch.no_grad():
-        if os.path.exists(embeddings_dir / f"{patient}.pt"):
-            image_embeddings = torch.load(embeddings_dir / f"{patient}.pt")
+    image_embeddings = []
+    for i in range(0, len(batched_input), num_classes):
+        patient = batched_input[i]["patient"]
+        if not os.path.exists(embeddings_dir / f"{patient}.pt"):
+            image = sam.preprocess(batched_input[i]["image"])
+            with torch.no_grad():
+                embedding = sam.image_encoder(image.unsqueeze(0))
+            torch.save(embedding, embeddings_dir / f"{patient}.pt")
         else:
-            image_embeddings = sam.image_encoder(input_images)
-            torch.save(image_embeddings, embeddings_dir / f"{patient}.pt")
+            embedding = torch.load(embeddings_dir / f"{patient}.pt")
+
+        # Expand the embedding to match the number of classes. Each embedding is re-used for each prediction class.
+        image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
 
     outputs = []
     for image_record, curr_embedding in zip(batched_input, image_embeddings):
@@ -373,7 +376,7 @@ def forward(
             )
 
         low_res_masks, iou_predictions = sam.mask_decoder(
-            image_embeddings=curr_embedding.unsqueeze(0),
+            image_embeddings=curr_embedding,
             image_pe=sam.prompt_encoder.get_dense_pe(),
             sparse_prompt_embeddings=sparse_embeddings,
             dense_prompt_embeddings=dense_embeddings,
