@@ -103,7 +103,7 @@ def get_epoch_loss(
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
 
     sam.train()
-    predictions, labels, _, _, _, _ = get_batch_predictions(
+    predictions, _, _, _, _ = get_batch_predictions(
         sam=sam,
         inputs=inputs,
         labels=labels,
@@ -168,7 +168,7 @@ def get_validation_loss(
         val_data["label"].to(device),
         val_data["patient"],
     )
-    val_outputs, val_labels, _, _, _, _ = get_batch_predictions(
+    val_outputs, _, _, _, _ = get_batch_predictions(
         sam=sam,
         inputs=val_inputs,
         labels=val_labels,

@@ -207,7 +207,7 @@ def get_batch_predictions(
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
     bboxes = collate_bboxes(batched_input, num_classes)
 
-    return masks, labels, bboxes, points, point_labels
+    return masks, bboxes, points, point_labels
 
 
 def collate_bboxes(batched_input, num_classes: int):

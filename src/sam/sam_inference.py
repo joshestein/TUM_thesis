@@ -105,7 +105,7 @@ def run_batch_inference(
         )
 
         with torch.no_grad():
-            masks, labels, boxes, points, point_labels = get_batch_predictions(
+            masks, boxes, points, point_labels = get_batch_predictions(
                 sam=sam,
                 transform=resize_transform,
                 inputs=inputs,
@@ -116,7 +116,6 @@ def run_batch_inference(
                 num_classes=num_classes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
-            labels = [label.cpu().numpy() for label in labels]
 
         for i in range(len(masks)):
             save_figure(
