@@ -101,7 +101,7 @@ def run_batch_inference(
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
     dice_scores = []
-    for batch_index, batch in enumerate(test_loader):
+    for batch in test_loader:
         inputs, labels, patient = (
             batch["image"].to(device),
             batch["label"].to(device, dtype=torch.uint8),
