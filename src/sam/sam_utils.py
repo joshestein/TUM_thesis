@@ -159,11 +159,11 @@ def get_batch_predictions(
     transform=None,
 ):
     """Given inputs and labels, runs inference on all examples in the batch.
-    For each example, returns the predicted masks, ground truth masks, bounding boxes, and transformed images.
+    For each example, returns the predicted masks, ground truth masks and bounding boxes.
 
     Note that for each input image, there are num_classes predictions, one for each class.
     """
-    batched_input = []
+    batched_input, points, point_labels = [], [], []
     if transform is None:
         transform = ResizeLongestSide(sam.image_encoder.img_size)
 
@@ -175,9 +175,11 @@ def get_batch_predictions(
         ground_truth = labels[index]
         prepared_image = prepare_image(image, transform, sam.device)
 
-        points, point_labels = get_sam_points(
+        image_points, image_point_labels = get_sam_points(
             ground_truth.cpu().numpy(), num_classes, pos_sample_points, neg_sample_points
         )
+        points.append(image_points)
+        point_labels.append(image_point_labels)
 
         # Get bounding box and points for each class of one-hot encoded mask
         for i, label in enumerate(ground_truth):
@@ -187,8 +189,8 @@ def get_batch_predictions(
             else:
                 bbox = None
 
-            point = transform.apply_coords_torch(torch.as_tensor(points[i], device=sam.device), image.shape[1:])
-            point_label = torch.as_tensor(point_labels[i], device=sam.device)
+            point = transform.apply_coords_torch(torch.as_tensor(image_points[i], device=sam.device), image.shape[1:])
+            point_label = torch.as_tensor(image_point_labels[i], device=sam.device)
             point, point_label = point.unsqueeze(0), point_label.unsqueeze(0)
 
             batched_input.append(
@@ -206,13 +208,13 @@ def get_batch_predictions(
     # We re-write the forward pass here to enable gradients.
     batched_output = forward(sam, batched_input, num_classes, multimask_output=False)
 
-    bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
+    bboxes = collate_bboxes(batched_input, num_classes)
 
-    return masks, labels, bboxes, points, point_labels, transformed_images
+    return masks, labels, bboxes, points, point_labels
 
 
-def collate_batch_inputs(batched_input, num_classes: int):
+def collate_bboxes(batched_input, num_classes: int):
     bboxes, points, point_labels = [], [], []
     for i in range(0, len(batched_input), num_classes):
         if batched_input[i]["boxes"] is not None:
@@ -222,28 +224,9 @@ def collate_batch_inputs(batched_input, num_classes: int):
         else:
             collated_boxes = [None] * num_classes
 
-        if batched_input[i]["point_coords"] is not None:
-            collated_points = torch.stack(
-                [batched_input[i + class_index]["point_coords"][0] for class_index in range(num_classes)]
-            )
-        else:
-            collated_points = [None] * num_classes
-
-        if batched_input[i]["point_labels"] is not None:
-            collated_point_labels = torch.stack(
-                [batched_input[i + class_index]["point_labels"][0] for class_index in range(num_classes)]
-            )
-        else:
-            collated_point_labels = [None] * num_classes
-
         bboxes.append(collated_boxes)
-        points.append(collated_points)
-        point_labels.append(collated_point_labels)
-        transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
 
-    transformed_images = torch.stack(transformed_images)
-
-    return bboxes, points, point_labels, transformed_images
+    return bboxes
 
 
 def save_figure(
