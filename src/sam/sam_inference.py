@@ -113,12 +113,15 @@ def run_batch_inference(
                 neg_sample_points=neg_sample_points,
                 use_bboxes=use_bboxes,
             )
+
+            # Convert to numpy before saving
             masks = [mask.cpu().numpy() for mask in masks]
+            labels = [label.cpu().numpy() for label in labels]
 
         for i in range(len(masks)):
             save_figure(
                 patient[i],
-                inputs[i],
+                inputs[i].permute(1, 2, 0).squeeze(),
                 boxes[i],
                 labels[i],
                 masks[i],
