@@ -188,7 +188,7 @@ def compute_val_loss_and_metrics(inputs, outputs, labels, loss_function, metric_
                 "mask_data": torch.argmax(val_outputs[0], dim=0).cpu().numpy(),
                 "class_labels": class_labels,
             },
-            "ground_truth": {"mask_data": labels[0][0].cpu().numpy(), "class_labels": class_labels},
+            "ground_truth": {"mask_data": torch.argmax(val_outputs[0]).cpu().numpy(), "class_labels": class_labels},
         },
     )
 
