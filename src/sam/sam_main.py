@@ -51,6 +51,7 @@ def main(
         num_training_cases=num_training_cases,
         num_slices=num_slices,
         nnunet_transforms=True,
+        force_foreground_classes=True,
     ).get_training_datasets()
 
     train_loader, val_loader = get_train_dataloaders(

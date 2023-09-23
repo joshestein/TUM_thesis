@@ -175,7 +175,9 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     sam = setup_sam(root_dir, device)
 
     dataset_helper = DatasetHelperFactory(dataset_name=dataset)
-    dataset_helper = dataset_helper.dataset(spatial_dims=spatial_dims, data_dir=data_dir, nnunet_transforms=True)
+    dataset_helper = dataset_helper.dataset(
+        spatial_dims=spatial_dims, data_dir=data_dir, nnunet_transforms=True, force_foreground_classes=True
+    )
 
     test_data = dataset_helper.get_test_dataset()
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=0)

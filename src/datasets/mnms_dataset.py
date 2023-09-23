@@ -17,12 +17,14 @@ class MNMsDataset(Dataset):
         num_training_cases: int | None = None,
         shuffle=True,
         random_slice=False,
+        force_foreground=False,
     ):
         """
         :param data_dir: Path to training/testing data
         :param transform: Any transforms that should be applied
         :param num_training_cases: The number of cases to use for training
         :param shuffle: Whether to shuffle the dataset
+        :param force_foreground: Whether to ensure that sampled slices contain all foreground classes
         """
         self.data_dir = data_dir
         patient_dirs = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
@@ -40,6 +42,7 @@ class MNMsDataset(Dataset):
 
         self.transform = transform
         self.random_slice = random_slice
+        self.force_foreground = force_foreground
 
     def _get_cardiac_phase_indexes(self):
         """Reads the CSV metadata file to extract the end diastole and end systole frames for each volume.
@@ -88,23 +91,8 @@ class MNMsDataset(Dataset):
         label = label.get_fdata(dtype=np.float32)
 
         if self.random_slice:
-            slice_index = np.random.randint(0, image.shape[-1])
-            # TODO: use slicer and only read random slice into memory
-            image_slice = image[..., slice_index]
-            label_slice = label[..., slice_index].astype(int)
-
-            label_max = label_slice.max()
-            # Ensure we don't sample empty slices
-            while label_max == 0:
-                slice_index = np.random.randint(0, image.shape[-1])
-                image_slice = image[..., slice_index]
-                label_slice = label[..., slice_index].astype(int)
-                label_max = label_slice.max()
-
-            image = image_slice[np.newaxis, ...]  # Add channel dimension
-            # MNMs has 4 classes
-            label = np.moveaxis(np.eye(4)[label_slice], -1, 0)  # Convert to onehot, move channel to first dim
-            patient = f"{patient}_slice_{slice_index}"
+            image, label, slice_index = self._extract_slice(image, label)
+            patient = f"{patient}_{slice_index}"
 
         sample = {
             "image": image,
@@ -118,3 +106,21 @@ class MNMsDataset(Dataset):
             sample = self.transform(**sample)
 
         return sample
+
+    def _extract_slice(self, image, label, num_classes=4):
+        slice_index = np.random.randint(0, image.shape[-1])
+        # TODO: use slicer and only read random slice into memory
+        image_slice = image[..., slice_index]
+        label_slice = label[..., slice_index].astype(int)
+
+        if self.force_foreground:
+            # Ensure we don't sample slices without all foreground classes
+            while len(np.unique(label_slice)) != num_classes:
+                slice_index = np.random.randint(0, image.shape[-1])
+                image_slice = image[..., slice_index]
+                label_slice = label[..., slice_index].astype(int)
+
+        image = image_slice[np.newaxis, ...]  # Add channel dimension
+        label = np.moveaxis(np.eye(num_classes)[label_slice], -1, 0)  # Convert to onehot, move channel to first dim
+
+        return image, label, slice_index

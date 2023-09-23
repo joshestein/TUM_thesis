@@ -31,10 +31,12 @@ class DatasetHelper(ABC):
         num_slices: int | None = None,
         sample_regions: list[str] = ("apex", "mid", "base"),
         nnunet_transforms=False,
+        force_foreground_classes: bool = False,
     ):
         self.data_dir = data_dir
         self.num_training_cases = num_training_cases
         self.random_slice = spatial_dims == 2
+        self.force_all_foreground_classes = force_foreground_classes
 
         if nnunet_transforms:
             self.train_transforms, self.val_transforms = get_nnunet_transforms()
@@ -66,12 +68,14 @@ class ACDCDatasetHelper(DatasetHelper):
             transform=self.train_transforms,
             num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
         val_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
             num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
 
         return train_data, val_data
@@ -81,6 +85,7 @@ class ACDCDatasetHelper(DatasetHelper):
             data_dir=self.data_dir / "testing",
             transform=self.val_transforms,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
 
         return test_data
@@ -98,12 +103,14 @@ class MNMsDatasetHelper(DatasetHelper):
             transform=self.train_transforms,
             num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
         val_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
             num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
 
         return train_data, val_data
@@ -113,6 +120,7 @@ class MNMsDatasetHelper(DatasetHelper):
             data_dir=self.data_dir / "Testing",
             transform=self.val_transforms,
             random_slice=self.random_slice,
+            force_foreground=self.force_all_foreground_classes,
         )
 
         return test_data
