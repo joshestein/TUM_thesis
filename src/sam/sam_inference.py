@@ -107,7 +107,7 @@ def run_batch_inference(
         )
 
         with torch.no_grad():
-            masks, labels, boxes, points, point_labels, transformed_images = get_batch_predictions(
+            masks, labels, boxes, points, point_labels = get_batch_predictions(
                 sam=sam,
                 transform=resize_transform,
                 inputs=inputs,
@@ -119,12 +119,11 @@ def run_batch_inference(
             )
             masks = [mask.cpu().numpy() for mask in masks]
             labels = [label.cpu().numpy() for label in labels]
-            transformed_images = [cv2.cvtColor(image.cpu().numpy(), cv2.COLOR_RGB2GRAY) for image in transformed_images]
 
         for i in range(len(masks)):
             save_figure(
                 patient[i],
-                transformed_images[i],
+                inputs[i],
                 boxes[i],
                 labels[i],
                 masks[i],
