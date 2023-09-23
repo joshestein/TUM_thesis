@@ -49,9 +49,6 @@ def train(
                 neg_sample_points=neg_sample_points,
             )
 
-            if loss == -1:
-                continue
-
             epoch_loss += loss
             print(f"{step}/{len(train_loader.dataset) // train_loader.batch_size}, " f"train_loss: {loss:.4f}")
 
