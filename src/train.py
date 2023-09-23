@@ -116,7 +116,7 @@ def validate(
 
 def get_epoch_loss(
     optimizer: torch.optim.Optimizer,
-    batch_data: torch.tensor,
+    batch_data: torch.Tensor,
     model: torch.nn.Module,
     loss_function: torch.nn.Module,
     device: str | torch.device,
@@ -143,7 +143,7 @@ def get_epoch_loss(
 
 
 def get_validation_loss(
-    val_data: torch.tensor,
+    val_data: dict[str, torch.Tensor],
     model: torch.nn.Module,
     loss_function: torch.nn.Module,
     device: str | torch.device,

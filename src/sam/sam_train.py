@@ -92,7 +92,7 @@ def train(
 
 def get_epoch_loss(
     optimizer: torch.optim.Optimizer,
-    batch_data: torch.tensor,
+    batch_data: dict[str, torch.Tensor],
     sam: Sam,
     loss_function: torch.nn.Module,
     device: str | torch.device,
@@ -161,7 +161,7 @@ def validate(
 
 
 def get_validation_loss(
-    val_data: torch.tensor,
+    val_data: dict[str, torch.Tensor],
     sam: Sam,
     loss_function: torch.nn.Module,
     device: str | torch.device,

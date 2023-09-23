@@ -11,7 +11,7 @@ from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
 
-def get_bounding_box(ground_truth_map: torch.tensor, margin: int = 10) -> list[torch.tensor]:
+def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 10) -> list[torch.Tensor]:
     # get bounding box from mask
     y_indices, x_indices = torch.where(ground_truth_map > 0)
     x_min, x_max = torch.min(x_indices), torch.max(x_indices)
@@ -45,7 +45,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np
 
 def get_sam_points(
     ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int = 0
-) -> (np.array, np.array):
+) -> tuple[np.ndarray, np.ndarray]:
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
     # 1. Finding the centre of mass of the class.
@@ -149,9 +149,9 @@ def prepare_image(image, transform, device):
 
 def get_batch_predictions(
     sam: Sam,
-    inputs: torch.tensor,
-    labels: torch.tensor,
-    patients: torch.tensor,
+    inputs: torch.Tensor,
+    labels: torch.Tensor,
+    patients: torch.Tensor,
     pos_sample_points: int,
     neg_sample_points: int = 0,
     use_bboxes: bool = True,
