@@ -11,7 +11,7 @@ from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
 
-def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 10) -> list[int]:
+def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 5) -> list[int]:
     # get bounding box from mask
     y_indices, x_indices = torch.where(ground_truth_map > 0)
     x_min, x_max = torch.min(x_indices), torch.max(x_indices)
@@ -27,7 +27,7 @@ def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 10) -> list[i
     return bbox
 
 
-def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 10) -> np.ndarray:
+def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 5) -> np.ndarray:
     # get bounding box from mask
     y_indices, x_indices = np.where(ground_truth_map > 0)
     x_min, x_max = np.min(x_indices), np.max(x_indices)
