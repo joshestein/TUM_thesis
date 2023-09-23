@@ -193,7 +193,7 @@ def get_batch_predictions(
 
             batched_input.append(
                 {
-                    "image": prepared_image,
+                    "image": prepared_image if i == 0 else None,
                     "boxes": bbox,
                     "point_coords": point,
                     "point_labels": point_label,
