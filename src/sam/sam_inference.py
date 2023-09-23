@@ -39,7 +39,6 @@ def run_inference(
     neg_sample_points: int = 0,
     use_bboxes: bool = True,
     use_points: bool = True,
-    num_classes=4,
 ):
     """Expects the dataloader to have a batch size of 1."""
     dice_scores = []
@@ -55,7 +54,7 @@ def run_inference(
 
         bboxes, masks = [], []
         points, point_labels = (
-            get_sam_points(labels, num_classes, pos_sample_points, neg_sample_points) if use_points else (None, None)
+            get_sam_points(labels, pos_sample_points, neg_sample_points) if use_points else (None, None)
         )
 
         for i, label in enumerate(labels):
@@ -75,12 +74,11 @@ def run_inference(
             labels=labels,
             masks=masks,
             out_dir=out_dir,
-            num_classes=num_classes,
             points=points,
             point_labels=point_labels,
             save_to_wandb=True,
         )
-        dice_scores.append(calculate_dice_for_classes(masks, labels, num_classes=num_classes))
+        dice_scores.append(calculate_dice_for_classes(masks, labels))
 
     return torch.tensor(dice_scores)
 
@@ -93,7 +91,6 @@ def run_batch_inference(
     pos_sample_points: int,
     neg_sample_points: int = 0,
     use_bboxes: bool = True,
-    num_classes: int = 4,
 ):
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
@@ -114,7 +111,6 @@ def run_batch_inference(
                 patients=patient,
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
-                num_classes=num_classes,
                 use_bboxes=use_bboxes,
             )
             masks = [mask.cpu().numpy() for mask in masks]
@@ -127,12 +123,11 @@ def run_batch_inference(
                 labels[i],
                 masks[i],
                 out_dir=out_dir,
-                num_classes=num_classes,
                 points=points[i],
                 point_labels=point_labels[i],
                 save_to_wandb=True,
             )
-            dice_scores.append(calculate_dice_for_classes(masks[i], labels[i], num_classes=num_classes))
+            dice_scores.append(calculate_dice_for_classes(masks[i], labels[i]))
 
     return torch.tensor(dice_scores)
 

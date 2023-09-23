@@ -44,7 +44,7 @@ def get_numpy_bounding_box(ground_truth_map: np.ndarray, margin: int = 5) -> np.
 
 
 def get_sam_points(
-    ground_truth: np.ndarray, num_classes: int, num_pos_points: int, num_neg_points: int = 0
+    ground_truth: np.ndarray, num_pos_points: int, num_neg_points: int = 0
 ) -> tuple[np.ndarray, np.ndarray]:
     # Sample n points from each class of the ground truth mask.
     # Samples are chosen by:
@@ -54,7 +54,9 @@ def get_sam_points(
 
     # If negative points are given, we re-use the positively sampled points as negative points for other classes.
 
-    points_per_class = [sample_points(ground_truth[class_index], num_pos_points) for class_index in range(num_classes)]
+    num_classes = ground_truth.shape[0]
+
+    points_per_class = [sample_points(class_truth, num_pos_points) for class_truth in ground_truth]
     labels_per_class = np.concatenate(
         (
             np.ones((num_classes, num_pos_points), dtype=int),
@@ -155,7 +157,6 @@ def get_batch_predictions(
     pos_sample_points: int,
     neg_sample_points: int = 0,
     use_bboxes: bool = True,
-    num_classes=4,
     transform=None,
 ):
     """Given inputs and labels, runs inference on all examples in the batch.
@@ -174,7 +175,7 @@ def get_batch_predictions(
         prepared_image = prepare_image(image, transform, sam.device)
 
         image_points, image_point_labels = get_sam_points(
-            ground_truth.cpu().numpy(), num_classes, pos_sample_points, neg_sample_points
+            ground_truth.cpu().numpy(), pos_sample_points, neg_sample_points
         )
         image_bbox = []
         points.append(image_points)
@@ -206,7 +207,7 @@ def get_batch_predictions(
 
     # The gradients are disabled in Sam with the decorator @torch.no_grad.
     # We re-write the forward pass here to enable gradients.
-    batched_output = forward(sam, batched_input, num_classes, multimask_output=False)
+    batched_output = forward(sam, batched_input, num_classes=labels[0].shape[0], multimask_output=False)
 
     masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
 
@@ -220,7 +221,6 @@ def save_figure(
     labels,
     masks,
     out_dir: Path,
-    num_classes: int = 4,
     points: list | np.ndarray | None = None,
     point_labels: list | np.ndarray | None = None,
     save_to_wandb: bool = False,
@@ -228,6 +228,8 @@ def save_figure(
     plt.ioff()
     fig = plt.figure(figsize=(16, 16))
     plt.tight_layout()
+
+    num_classes = labels.shape[0]
 
     for class_index in range(num_classes):
         # Original input
@@ -279,9 +281,9 @@ def save_wandb_image(inputs, bboxes, labels, masks):
     wandb.log({"sam_inference": wb_image})
 
 
-def calculate_dice_for_classes(masks, labels, ignore_background=True, num_classes=4, eps=1e-6):
+def calculate_dice_for_classes(masks, labels, ignore_background=True, eps=1e-6):
     dice_scores = []
-    for class_index in range(num_classes):
+    for class_index in range(labels.shape[0]):
         if ignore_background and class_index == 0:
             continue
 
