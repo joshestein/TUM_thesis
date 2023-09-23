@@ -215,30 +215,31 @@ def get_batch_predictions(
     return masks, labels, bboxes, points, point_labels, transformed_images
 
 
-
-    return torch.stack(masks)
-
-
 def collate_batch_inputs(batched_input, num_classes: int):
-    bboxes, points, point_labels, transformed_images = [], [], [], []
+    bboxes, points, point_labels = [], [], []
     for i in range(0, len(batched_input), num_classes):
-        collated_boxes = [
-            batched_input[i + class_index]["boxes"][0] if batched_input[i + class_index]["boxes"] is not None else None
-            for class_index in range(num_classes)
-        ]
-        collated_points = [
-            batched_input[i + class_index]["point_coords"][0]
-            if batched_input[i + class_index]["point_coords"] is not None
-            else None
-            for class_index in range(num_classes)
-        ]
-        collated_point_labels = [
-            batched_input[i + class_index]["point_labels"][0]
-            if batched_input[i + class_index]["point_labels"] is not None
-            else None
-            for class_index in range(num_classes)
-        ]
-        bboxes.append(collated_boxes)  # Don't stack, otherwise NoneType errors
+        if batched_input[i]["boxes"] is not None:
+            collated_boxes = torch.stack(
+                [batched_input[i + class_index]["boxes"][0] for class_index in range(num_classes)]
+            )
+        else:
+            collated_boxes = [None] * num_classes
+
+        if batched_input[i]["point_coords"] is not None:
+            collated_points = torch.stack(
+                [batched_input[i + class_index]["point_coords"][0] for class_index in range(num_classes)]
+            )
+        else:
+            collated_points = [None] * num_classes
+
+        if batched_input[i]["point_labels"] is not None:
+            collated_point_labels = torch.stack(
+                [batched_input[i + class_index]["point_labels"][0] for class_index in range(num_classes)]
+            )
+        else:
+            collated_point_labels = [None] * num_classes
+
+        bboxes.append(collated_boxes)
         points.append(collated_points)
         point_labels.append(collated_point_labels)
         transformed_images.append(batched_input[i]["image"].permute(1, 2, 0))  # Move channels to last dimension
