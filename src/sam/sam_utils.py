@@ -256,9 +256,9 @@ def save_figure(
     labels,
     masks,
     out_dir: Path,
-    num_classes=4,
-    points: list = None,
-    point_labels: list | np.ndarray = None,
+    num_classes: int = 4,
+    points: list | np.ndarray | None = None,
+    point_labels: list | np.ndarray | None = None,
     save_to_wandb: bool = False,
 ):
     plt.ioff()
@@ -270,7 +270,9 @@ def save_figure(
         plt.subplot(num_classes, 3, class_index * 3 + 1)
         plt.imshow(inputs, cmap="gray")
         show_box(bboxes[class_index], plt.gca())
-        show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
+
+        if points and point_labels:
+            show_points(points[class_index], point_labels[class_index], plt.gca(), marker_size=100)
 
         plt.axis("off")
 
