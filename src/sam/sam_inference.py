@@ -137,7 +137,7 @@ def run_batch_inference(
 
 def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int = 0):
     num_samples_str = f"num_samples_{pos_sample_points}"
-    use_bbox_str = "" if use_bboxes else "no_bboxes"
+    use_bbox_str = "with_bboxes" if use_bboxes else "no_bboxes"
     neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
 
     print(f"Starting inference for {dataset}...")
