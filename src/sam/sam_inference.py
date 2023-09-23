@@ -46,7 +46,6 @@ def run_inference(
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         patient = batch["patient"][0]
 
-        print(f"Predicting patient: {patient}")
         inputs = convert_to_normalized_colour(inputs)
         predictor.set_image(inputs)
 
@@ -180,24 +179,25 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
 
     figure_dir = out_dir / "figures"
     os.makedirs(figure_dir, exist_ok=True)
-    dice_scores = run_inference(
-        test_loader,
-        SamPredictor(sam),
-        device,
-        figure_dir,
-        use_bboxes=use_bboxes,
-        pos_sample_points=pos_sample_points,
-        neg_sample_points=neg_sample_points,
-    )
-    # dice_scores = run_batch_inference(
+
+    # dice_scores = run_inference(
     #     test_loader,
-    #     sam,
+    #     SamPredictor(sam),
     #     device,
     #     figure_dir,
     #     use_bboxes=use_bboxes,
     #     pos_sample_points=pos_sample_points,
     #     neg_sample_points=neg_sample_points,
     # )
+    dice_scores = run_batch_inference(
+        test_loader,
+        sam,
+        device,
+        figure_dir,
+        use_bboxes=use_bboxes,
+        pos_sample_points=pos_sample_points,
+        neg_sample_points=neg_sample_points,
+    )
     mean_fg_dice = torch.mean(dice_scores, dim=0)
     print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
