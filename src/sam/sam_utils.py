@@ -367,17 +367,20 @@ def get_and_save_embeddings(
     embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
     image_embeddings = []
-    for i in range(0, len(batched_input), num_classes):
-        patient = batched_input[i]["patient"]
-        if not os.path.exists(embeddings_dir / f"{patient}.pt"):
-            image = sam.preprocess(batched_input[i]["image"])
-            with torch.no_grad():
-                embedding = sam.image_encoder(image.unsqueeze(0))
-            torch.save(embedding, embeddings_dir / f"{patient}.pt")
-        else:
-            embedding = torch.load(embeddings_dir / f"{patient}.pt")
+    with torch.no_grad():
+        for i in range(0, len(batched_input), num_classes):
+            patient = batched_input[i]["patient"]
+            embeddings_path = embeddings_dir / f"{patient}.pt"
 
-        # Expand the embedding to match the number of classes. Each embedding is re-used for each prediction class.
-        image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
+            if not os.path.exists(embeddings_path):
+                image = sam.preprocess(batched_input[i]["image"])
+                embedding = sam.image_encoder(image.unsqueeze(0))
+                torch.save(embedding, embeddings_path)
+            else:
+                embedding = torch.load(embeddings_path)
+
+            # Expand the embedding to match the number of classes. The expanded embeddings are re-used for each
+            # prediction class.
+            image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
 
     return image_embeddings
