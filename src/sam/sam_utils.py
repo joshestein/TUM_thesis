@@ -209,17 +209,12 @@ def get_batch_predictions(
     # We re-write the forward pass here to enable gradients.
     batched_output = forward(sam, batched_input, multimask_output=False)
 
-    masks = collate_mask_outputs(batched_output, num_classes)
     bboxes, points, point_labels, transformed_images = collate_batch_inputs(batched_input, num_classes)
+    masks = [batched_output[i]["masks"] for i in range(len(batched_output))]
 
     return masks, labels, bboxes, points, point_labels, transformed_images
 
 
-def collate_mask_outputs(batched_output, num_classes: int):
-    masks = []
-    for i in range(0, len(batched_output), num_classes):
-        collated_masks = [batched_output[i + class_index]["masks"].squeeze() for class_index in range(num_classes)]
-        masks.append(torch.stack(collated_masks))
 
     return torch.stack(masks)
 
