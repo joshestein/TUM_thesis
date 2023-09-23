@@ -97,7 +97,6 @@ def get_epoch_loss(
     loss_function: torch.nn.Module,
     device: str | torch.device,
     pos_sample_points: int,
-    num_classes: int = 4,
     neg_sample_points: int = 0,
 ):
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
@@ -110,7 +109,6 @@ def get_epoch_loss(
         patients=patients,
         pos_sample_points=pos_sample_points,
         neg_sample_points=neg_sample_points,
-        num_classes=num_classes,
     )
 
     optimizer.zero_grad()
