@@ -1,5 +1,6 @@
 import os.path
 from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
@@ -305,7 +306,7 @@ def _calculate_dice(prediction, ground_truth, eps=1e-6):
 
 def forward(
     sam: Sam,
-    batched_input: list[dict[str, any]],
+    batched_input: list[dict[str, Any]],
     num_classes: int,
     multimask_output=False,
 ):
@@ -355,7 +356,7 @@ def forward(
 
 def get_and_save_embeddings(
     sam: Sam,
-    batched_input: list[dict[str, any]],
+    batched_input: list[dict[str, Any]],
     num_classes: int,
     embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
