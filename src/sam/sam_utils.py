@@ -218,10 +218,12 @@ def get_batch_predictions(
         multimask_output=False,
     )
 
-    masks = [
+    batch_masks = [
         torch.stack([item["masks"].squeeze() for item in batched_output[i : i + num_classes]])
         for i in range(0, len(batched_output), num_classes)
     ]
+    masks = torch.stack(batch_masks)
+
     return masks, bboxes, points, point_labels
 
 
