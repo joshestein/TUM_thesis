@@ -342,21 +342,8 @@ def forward(
     batched_input: list[dict[str, any]],
     num_classes: int,
     multimask_output=False,
-    embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
-    image_embeddings = []
-    for i in range(0, len(batched_input), num_classes):
-        patient = batched_input[i]["patient"]
-        if not os.path.exists(embeddings_dir / f"{patient}.pt"):
-            image = sam.preprocess(batched_input[i]["image"])
-            with torch.no_grad():
-                embedding = sam.image_encoder(image.unsqueeze(0))
-            torch.save(embedding, embeddings_dir / f"{patient}.pt")
-        else:
-            embedding = torch.load(embeddings_dir / f"{patient}.pt")
-
-        # Expand the embedding to match the number of classes. Each embedding is re-used for each prediction class.
-        image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
+    image_embeddings = get_and_save_embeddings(sam, batched_input, num_classes)
 
     outputs = []
     for image_record, curr_embedding in zip(batched_input, image_embeddings):
@@ -398,3 +385,26 @@ def forward(
             }
         )
     return outputs
+
+
+def get_and_save_embeddings(
+    sam: Sam,
+    batched_input: list[dict[str, any]],
+    num_classes: int,
+    embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
+):
+    image_embeddings = []
+    for i in range(0, len(batched_input), num_classes):
+        patient = batched_input[i]["patient"]
+        if not os.path.exists(embeddings_dir / f"{patient}.pt"):
+            image = sam.preprocess(batched_input[i]["image"])
+            with torch.no_grad():
+                embedding = sam.image_encoder(image.unsqueeze(0))
+            torch.save(embedding, embeddings_dir / f"{patient}.pt")
+        else:
+            embedding = torch.load(embeddings_dir / f"{patient}.pt")
+
+        # Expand the embedding to match the number of classes. Each embedding is re-used for each prediction class.
+        image_embeddings.append(embedding.expand(num_classes, -1, -1, -1))
+
+    return image_embeddings
