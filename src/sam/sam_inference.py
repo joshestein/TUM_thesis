@@ -115,8 +115,8 @@ def run_batch_inference(
             )
 
             # Convert to numpy before saving
-            masks = [mask.cpu().numpy() for mask in masks]
-            labels = [label.cpu().numpy() for label in labels]
+            masks = masks.cpu().numpy()
+            labels = labels.cpu().numpy()
 
         for i in range(len(masks)):
             save_figure(
