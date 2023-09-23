@@ -194,7 +194,7 @@ def get_batch_predictions(
 
             batched_input.append(
                 {
-                    "image": prepared_image if i == 0 else None,
+                    "image": prepared_image,
                     "boxes": transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
                     if bbox
                     else None,
