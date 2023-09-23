@@ -148,15 +148,18 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
     wandb.init(
         project=f"sam_baseline_inference_{dataset}",
         name=f"{dataset}_{'_'.join(filter(None, (num_samples_str, use_bbox_str, neg_samples_str)))}",
-        config={"dataset": dataset, "num_sample_points": pos_sample_points},
+        config={
+            "dataset": dataset,
+            "pos_sample_points": pos_sample_points,
+            "neg_sample_points": neg_sample_points,
+            "bboxes": use_bboxes,
+        },
         dir=log_dir,
         mode="disabled",
         reinit=True,
     )
 
-    out_dir = out_dir / "sam" / f"{dataset}" / num_samples_str
-    if not use_bboxes:
-        out_dir = out_dir / "no_bboxes"
+    out_dir = out_dir / "sam" / f"{dataset}" / use_bbox_str / num_samples_str
     if neg_sample_points > 0:
         out_dir = out_dir / neg_samples_str
 
