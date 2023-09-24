@@ -125,13 +125,13 @@ if __name__ == "__main__":
         "--pos_sample_points",
         "-p",
         type=int,
-        default=3,
+        default=2,
     )
     parser.add_argument(
         "--neg_sample_points",
         "-n",
         type=int,
-        default=2,
+        default=1,
     )
     parser.add_argument(
         "--num_training_cases",
