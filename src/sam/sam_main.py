@@ -92,6 +92,8 @@ def main(
         reinit=True,
     )
     wandb.config.dataset = dataset_name
+    wandb.config.pos_sample_points = pos_sample_points
+    wandb.config.neg_sample_points = neg_sample_points
 
     metric_handler = MetricHandler("dice")
 
