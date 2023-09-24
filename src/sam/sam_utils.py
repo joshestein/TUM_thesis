@@ -185,8 +185,15 @@ def get_batch_predictions(
 
         # Get bounding box and points for each class of one-hot encoded mask
         for i, label in enumerate(ground_truth):
-            bbox = get_bounding_box(label) if use_bboxes else None
-            image_bbox.append(bbox)
+            if use_bboxes:
+                bbox = get_bounding_box(label)
+                image_bbox.append(bbox)
+                # Apply transform only after appending to our tracked boxes (pass transformed box to model, but save
+                # non-transformed box).
+                bbox = transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
+            else:
+                bbox = None
+                image_bbox.append(bbox)
 
             point = transform.apply_coords_torch(torch.as_tensor(image_points[i], device=sam.device), image.shape[1:])
             point_label = torch.as_tensor(image_point_labels[i], device=sam.device)
@@ -195,9 +202,7 @@ def get_batch_predictions(
             batched_input.append(
                 {
                     "image": prepared_image,
-                    "boxes": transform.apply_boxes_torch(torch.as_tensor(bbox, device=sam.device), image.shape[1:])
-                    if bbox
-                    else None,
+                    "boxes": bbox,
                     "point_coords": point,
                     "point_labels": point_label,
                     "original_size": image.shape[1:],
