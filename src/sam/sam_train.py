@@ -29,7 +29,7 @@ def train(
 
     epoch_loss_values = []
 
-    scheduler = torch.optim.lr_scheduler.PolynomialLR(optimizer, optimizer.param_groups[0]["lr"], epochs)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=5, verbose=True)
 
     for epoch in range(epochs):
         print("-" * 10)
@@ -82,7 +82,7 @@ def train(
                 f"at epoch: {metric_handler.best_epoch}"
             )
 
-        scheduler.step()
+        scheduler.step(epoch_loss)
 
     return epoch_loss_values
 
