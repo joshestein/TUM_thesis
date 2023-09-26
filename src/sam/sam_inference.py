@@ -190,7 +190,7 @@ def main(
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    if num_training_cases is not None:
+    if num_training_cases is None:
         sam = setup_sam(root_dir / "models", device)
     else:
         sam = setup_sam(out_dir, device, checkpoint="best_metric_model.pth")
