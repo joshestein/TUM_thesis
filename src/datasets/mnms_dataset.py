@@ -13,7 +13,7 @@ class MNMsDataset(Dataset):
     def __init__(
         self,
         data_dir: str | Path,
-        transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose = None,
+        transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose | None = None,
         num_training_cases: int | None = None,
         shuffle=True,
         random_slice=False,
