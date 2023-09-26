@@ -11,6 +11,8 @@ from scipy import ndimage
 from segment_anything.modeling import Sam
 from segment_anything.utils.transforms import ResizeLongestSide
 
+from src.metrics import METRICS
+
 
 def get_bounding_box(ground_truth_map: torch.Tensor, margin: int = 5) -> list[int]:
     # get bounding box from mask
@@ -300,15 +302,22 @@ def save_wandb_image(inputs, bboxes, labels, masks):
 
 
 def calculate_dice_for_classes(masks, labels, ignore_background=True, eps=1e-6):
-    dice_scores = []
-    for class_index in range(labels.shape[0]):
-        if ignore_background and class_index == 0:
-            continue
+    # dice_scores = []
+    # for class_index in range(labels.shape[0]):
+    #     if ignore_background and class_index == 0:
+    #         continue
+    #
+    #     dice = _calculate_dice(masks[class_index], labels[class_index], eps=eps)
+    #     dice_scores.append(dice)
+    #
+    # return dice_scores
+    dice = METRICS["dice_per_label"](masks, labels)
+    return dice
 
-        dice = _calculate_dice(masks[class_index], labels[class_index], eps=eps)
-        dice_scores.append(dice)
 
-    return dice_scores
+def calculate_hd_for_classes(masks: torch.Tensor, labels: torch.Tensor):
+    hd = METRICS["hausdorff_per_label"](masks, labels)
+    return hd
 
 
 def _calculate_dice(prediction, ground_truth, eps=1e-6):
