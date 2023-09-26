@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from src.datasets.dataset_helper import DatasetHelperFactory
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
+    calculate_hd_for_classes,
     convert_to_normalized_colour,
     get_batch_predictions,
     get_numpy_bounding_box,
@@ -94,6 +95,7 @@ def run_batch_inference(
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
     dice_scores = []
+    hd_scores = []
     for batch in test_loader:
         inputs, labels, patient = (
             batch["image"].to(device),
@@ -114,9 +116,12 @@ def run_batch_inference(
                 inference=True,
             )
 
-            # Convert to numpy before saving
-            masks = masks.cpu().numpy()
-            labels = labels.cpu().numpy()
+        hd_scores.append(calculate_hd_for_classes(masks, labels))
+        dice_scores.append(calculate_dice_for_classes(masks, labels))
+
+        # Convert to numpy before saving
+        masks = masks.cpu().numpy()
+        labels = labels.cpu().numpy()
 
         for i in range(len(masks)):
             save_figure(
@@ -130,9 +135,8 @@ def run_batch_inference(
                 point_labels=point_labels[i],
                 save_to_wandb=True,
             )
-            dice_scores.append(calculate_dice_for_classes(masks[i], labels[i]))
 
-    return torch.tensor(dice_scores)
+    return torch.tensor(dice_scores), torch.tensor(hd_scores)
 
 
 def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int = 0):
