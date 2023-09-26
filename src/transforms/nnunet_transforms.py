@@ -16,8 +16,6 @@ from src.transforms.utility_batchgen_transforms import EnsureBatchDimension, Rem
 
 def get_nnunet_transforms():
     # These values are just extracted by inspecting the nnUNet pipeline
-    # This is for 2D ACDC
-    # TODO: check for MNMs
     patch_size_spatial = [224, 224]
     rotation_for_DA = {"x": (-math.pi, math.pi), "y": (0, 0), "z": (0, 0)}
     order_resampling_data = 3
