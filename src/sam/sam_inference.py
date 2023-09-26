@@ -24,7 +24,7 @@ from src.utils import setup_dirs
 
 
 def setup_sam(root_dir: Path, device: str | torch.device, checkpoint="sam_vit_h_4b8939.pth", model_type="vit_h"):
-    checkpoint = root_dir / "models" / checkpoint
+    checkpoint = root_dir / checkpoint
     sam = sam_model_registry[model_type](checkpoint=checkpoint)
     sam = sam.to(device)
     return sam
@@ -172,7 +172,7 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    sam = setup_sam(root_dir, device)
+    sam = setup_sam(root_dir / "models", device)
 
     dataset_helper = DatasetHelperFactory(dataset_name=dataset)
     dataset_helper = dataset_helper.dataset(
