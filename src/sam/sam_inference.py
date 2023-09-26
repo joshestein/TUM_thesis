@@ -278,8 +278,16 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    dataset_case_dict = {"acdc": [8, 24, 32, 48, 80, 160], "mnms": [8, 24, 32, 48, 80, 160, 192, 240]}
+
     for dataset in ["acdc", "mnms"]:
+        # Baseline inference
         for num_points in [2, 3, 5]:
             for use_bboxes in [True, False]:
                 for neg_points in [0, 1, 2]:
                     main(dataset, num_points, use_bboxes, neg_points)
+
+        # Fine-tuned inference
+        for num_cases in dataset_case_dict[dataset]:
+            # We only fine-tune with 2 positive sample points, 1 neg sample point, with bboxes
+            main(dataset, 2, True, 1, num_cases)
