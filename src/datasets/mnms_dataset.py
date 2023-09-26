@@ -87,17 +87,21 @@ class MNMsDataset(Dataset):
         label = nib.load(self.labels[index])
         patient = self.patients[index].parent.name
 
+        spacing = image.header.get_zooms()
+
         image = image.get_fdata(dtype=np.float32)
         label = label.get_fdata(dtype=np.float32)
 
         if self.random_slice:
             image, label, slice_index = self._extract_slice(image, label)
             patient = f"{patient}_slice_{slice_index}"
+            spacing = spacing[:2]
 
         sample = {
             "image": image,
             "label": label,
             "patient": patient,
+            "spacing": spacing,
         }
 
         if self.transform and isinstance(self.transform, monai.transforms.Compose):

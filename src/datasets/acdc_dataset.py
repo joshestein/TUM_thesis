@@ -55,14 +55,17 @@ class ACDCDataset(Dataset):
         label = nib.load(self.labels[index])
         patient = self.patients[index].parent.name
 
+        spacing = image.header.get_zooms()
+
         image = image.get_fdata(dtype=np.float32)
         label = label.get_fdata(dtype=np.float32).astype(np.uint8)
 
         if self.random_slice:
             image, label, slice_index = self._extract_slice(image, label)
             patient = f"{patient}_slice_{slice_index}"
+            spacing = spacing[:2]
 
-        sample = {"image": image, "label": label, "patient": patient}
+        sample = {"image": image, "label": label, "patient": patient, "spacing": spacing}
 
         # if self.full_volume:
         #     original_volume = nib.load(patient_dir / f"{patient}_4d.nii.gz")
