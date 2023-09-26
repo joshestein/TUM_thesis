@@ -1,5 +1,7 @@
 from typing import Optional
 
+import numpy as np
+import surface_distance
 import wandb
 from monai.metrics import DiceMetric, HausdorffDistanceMetric
 
@@ -59,3 +61,56 @@ class MetricHandler:
 
         assert metric_name in self.metric_values, f"{metric_name} not being tracked."
         return self.metric_values[metric_name][-1]
+
+
+def compute_surface_metrics(
+    prediction: np.ndarray,
+    target: np.ndarray,
+    spacing_mm: list[float],
+    hausdorff_percentile=95,
+):
+    # Ignore background class
+    prediction = prediction[:, 1:]
+    target = target[:, 1:]
+
+    sd = np.empty((prediction.shape[0], prediction.shape[1]))
+    hd = np.empty((prediction.shape[0], prediction.shape[1]))
+
+    for batch_index, class_index in np.ndindex(prediction.shape[0], prediction.shape[1]):
+        metrics = compute_np_surface_metrics(
+            # Convert to boolean arrays
+            prediction[batch_index, class_index] == 1,
+            target[batch_index, class_index] == 1,
+            spacing_mm=spacing_mm,
+            hausdorff_percentile=hausdorff_percentile,
+        )
+        hd[batch_index, class_index] = metrics["hausdorff"]
+        sd[batch_index, class_index] = metrics["surface_distance"]
+
+    # Average over batch
+    return {
+        "avg_surface_distance": np.nanmean(sd, axis=0),
+        "hausdorff": np.nanmean(hd, axis=0),
+        "mean_absolute_difference": np.nanmean(sd, axis=0),
+    }
+
+
+def compute_np_surface_metrics(pred: np.ndarray, target: np.ndarray, spacing_mm: list[float], hausdorff_percentile=95):
+    surface_distances = surface_distance.compute_surface_distances(pred, target, spacing_mm=spacing_mm)
+
+    hd = surface_distance.compute_robust_hausdorff(surface_distances, hausdorff_percentile)
+    dist_gt_to_prediction, dist_prediction_to_gt = surface_distance.compute_average_surface_distance(surface_distances)
+    sd = max(dist_gt_to_prediction, dist_prediction_to_gt)
+    absolute_difference = surface_distances["mean_absolute_difference"]
+
+    # Replace infs with NaNs
+    # This allows us to average using np.nanmean
+    sd = np.nan if sd == np.inf else sd
+    hd = np.nan if hd == np.inf else hd
+    absolute_difference = np.nan if absolute_difference == np.inf else absolute_difference
+
+    return {
+        "surface_distance": sd,
+        "hausdorff": hd,
+        "mean_absolute_difference": absolute_difference,
+    }
