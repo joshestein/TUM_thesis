@@ -136,7 +136,7 @@ def run_batch_inference(
                 save_to_wandb=True,
             )
 
-    return torch.tensor(dice_scores), torch.tensor(hd_scores)
+    return torch.mean(torch.stack(dice_scores), dim=0), torch.mean(torch.stack(hd_scores), dim=0)
 
 
 def main(
