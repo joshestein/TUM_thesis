@@ -12,6 +12,7 @@ from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 
 from src.datasets.dataset_helper import DatasetHelperFactory
+from src.metrics import compute_surface_metrics
 from src.sam.sam_utils import (
     calculate_dice_for_classes,
     calculate_hd_for_classes,
@@ -42,7 +43,7 @@ def run_inference(
     use_points: bool = True,
 ):
     """Expects the dataloader to have a batch size of 1."""
-    dice_scores = []
+    dice_scores, hd_scores = [], []
     for batch in test_loader:
         inputs, labels = batch["image"][0].to(device), batch["label"][0].to(device, dtype=torch.uint8)
         patient = batch["patient"][0]
@@ -94,13 +95,13 @@ def run_batch_inference(
 ):
     sam.eval()
     resize_transform = ResizeLongestSide(sam.image_encoder.img_size)
-    dice_scores = []
-    hd_scores = []
+    dice_scores, hd_scores, mad_scores = [], [], []
     for batch in test_loader:
-        inputs, labels, patient = (
+        inputs, labels, patient, spacing = (
             batch["image"].to(device),
             batch["label"].to(device, dtype=torch.uint8),
             batch["patient"],
+            batch["spacing"],
         )
 
         with torch.no_grad():
@@ -123,6 +124,10 @@ def run_batch_inference(
         masks = masks.cpu().numpy()
         labels = labels.cpu().numpy()
 
+        surface_metrics = compute_surface_metrics(masks, labels.astype(bool), spacing_mm=[s.item() for s in spacing])
+        hd_scores.append(surface_metrics["hausdorff"])
+        mad_scores.append(surface_metrics["mean_absolute_difference"])
+
         for i in range(len(masks)):
             save_figure(
                 patient[i],
@@ -136,7 +141,11 @@ def run_batch_inference(
                 save_to_wandb=True,
             )
 
-    return torch.mean(torch.stack(dice_scores), dim=0), torch.mean(torch.stack(hd_scores), dim=0)
+    return (
+        torch.mean(torch.stack(dice_scores), dim=0),
+        torch.mean(torch.stack(torch.as_tensor(hd_scores)), dim=0),
+        torch.mean(torch.stack(torch.as_tensor(mad_scores)), dim=0),
+    )
 
 
 def main(
@@ -215,7 +224,7 @@ def main(
     #     pos_sample_points=pos_sample_points,
     #     neg_sample_points=neg_sample_points,
     # )
-    dice_scores, hd_scores = run_batch_inference(
+    dice_scores, hd_scores, mad_scores = run_batch_inference(
         test_loader,
         sam,
         device,
@@ -232,16 +241,24 @@ def main(
     print(f"HD per class: {mean_fg_hd}")
     print(f"Mean HD: {torch.mean(mean_fg_hd)}")
 
+    mean_fg_mad = torch.mean(hd_scores, dim=0)
+    print(f"HD per class: {mean_fg_mad}")
+    print(f"Mean HD: {torch.mean(mean_fg_mad)}")
+
     wandb.log({"dice_per_class": mean_fg_dice.tolist()})
     wandb.log({"mean_dice": torch.mean(mean_fg_dice)})
     wandb.log({"hd_per_class": mean_fg_hd.tolist()})
     wandb.log({"mean_hd": torch.mean(mean_fg_hd)})
+    wandb.log({"mad_per_class": mean_fg_mad.tolist()})
+    wandb.log({"mean_mad": torch.mean(mean_fg_mad)})
 
     results = {
         "dice_per_class": mean_fg_dice.tolist(),
         "mean_dice": torch.mean(mean_fg_dice).item(),
         "hd_per_class": mean_fg_hd.tolist(),
         "mean_hd": torch.mean(mean_fg_hd).item(),
+        "mad_per_class": mean_fg_mad.tolist(),
+        "mean_mad": torch.mean(mean_fg_mad).item(),
     }
 
     with open(out_dir / "results.json", "w", encoding="utf-8") as file:
