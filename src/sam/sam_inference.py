@@ -215,7 +215,7 @@ def main(
     #     pos_sample_points=pos_sample_points,
     #     neg_sample_points=neg_sample_points,
     # )
-    dice_scores = run_batch_inference(
+    dice_scores, hd_scores = run_batch_inference(
         test_loader,
         sam,
         device,
@@ -228,12 +228,20 @@ def main(
     print(f"Dice per class: {mean_fg_dice}")
     print(f"Mean dice: {torch.mean(mean_fg_dice)}")
 
+    mean_fg_hd = torch.mean(hd_scores, dim=0)
+    print(f"HD per class: {mean_fg_hd}")
+    print(f"Mean HD: {torch.mean(mean_fg_hd)}")
+
     wandb.log({"dice_per_class": mean_fg_dice.tolist()})
     wandb.log({"mean_dice": torch.mean(mean_fg_dice)})
+    wandb.log({"hd_per_class": mean_fg_hd.tolist()})
+    wandb.log({"mean_hd": torch.mean(mean_fg_hd)})
 
     results = {
         "dice_per_class": mean_fg_dice.tolist(),
         "mean_dice": torch.mean(mean_fg_dice).item(),
+        "hd_per_class": mean_fg_hd.tolist(),
+        "mean_hd": torch.mean(mean_fg_hd).item(),
     }
 
     with open(out_dir / "results.json", "w", encoding="utf-8") as file:
