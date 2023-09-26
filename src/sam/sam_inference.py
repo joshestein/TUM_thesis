@@ -139,7 +139,13 @@ def run_batch_inference(
     return torch.tensor(dice_scores), torch.tensor(hd_scores)
 
 
-def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_points: int = 0):
+def main(
+    dataset: str,
+    pos_sample_points: int,
+    use_bboxes: bool,
+    neg_sample_points: int = 0,
+    num_training_cases: int | None = None,
+):
     num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "with_bboxes" if use_bboxes else "no_bboxes"
     neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
@@ -149,8 +155,12 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
 
     data_dir, log_dir, out_dir = setup_dirs(root_dir)
 
+    project_name = (
+        f"sam_baseline_inference_{dataset}" if num_training_cases is None else f"sam_inference_finetuned_{dataset}"
+    )
+
     wandb.init(
-        project=f"sam_baseline_inference_{dataset}",
+        project=project_name,
         name=f"{dataset}_{'_'.join(filter(None, (num_samples_str, use_bbox_str, neg_samples_str)))}",
         config={
             "dataset": dataset,
@@ -163,7 +173,11 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
         reinit=True,
     )
 
-    out_dir = out_dir / "sam" / f"{dataset}" / use_bbox_str / num_samples_str
+    out_dir = out_dir / "sam" / dataset
+    if num_training_cases is not None:
+        out_dir = out_dir / f"num_training_cases_{num_training_cases}"
+
+    out_dir = out_dir / use_bbox_str / num_samples_str
     if neg_sample_points > 0:
         out_dir = out_dir / neg_samples_str
 
@@ -176,7 +190,10 @@ def main(dataset: str, pos_sample_points: int, use_bboxes: bool, neg_sample_poin
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    sam = setup_sam(root_dir / "models", device)
+    if num_training_cases is not None:
+        sam = setup_sam(root_dir / "models", device)
+    else:
+        sam = setup_sam(out_dir, device, checkpoint="best_metric_model.pth")
 
     dataset_helper = DatasetHelperFactory(dataset_name=dataset)
     dataset_helper = dataset_helper.dataset(
