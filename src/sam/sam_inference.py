@@ -225,45 +225,65 @@ def main(
     #     pos_sample_points=pos_sample_points,
     #     neg_sample_points=neg_sample_points,
     # )
-    dice_scores, hd_scores, mad_scores = run_batch_inference(
-        test_loader,
-        sam,
-        device,
-        figure_dir,
-        use_bboxes=use_bboxes,
-        pos_sample_points=pos_sample_points,
-        neg_sample_points=neg_sample_points,
-    )
-    mean_fg_dice = torch.mean(dice_scores, dim=0)
-    print(f"Dice per class: {mean_fg_dice}")
-    print(f"Mean dice: {torch.mean(mean_fg_dice)}")
+    dice_scores, hd_scores, mad_scores = [], [], []
 
-    mean_fg_hd = torch.mean(hd_scores, dim=0)
-    print(f"HD per class: {mean_fg_hd}")
-    print(f"Mean HD: {torch.mean(mean_fg_hd)}")
+    # Average over 5 runs
+    for i in range(5):
+        dice, hd, mad = run_batch_inference(
+            test_loader,
+            sam,
+            device,
+            figure_dir,
+            use_bboxes=use_bboxes,
+            pos_sample_points=pos_sample_points,
+            neg_sample_points=neg_sample_points,
+        )
+        dice_scores.append(dice)
+        hd_scores.append(hd)
+        mad_scores.append(mad)
 
-    mean_fg_mad = torch.mean(mad_scores, dim=0)
-    print(f"HD per class: {mean_fg_mad}")
-    print(f"Mean HD: {torch.mean(mean_fg_mad)}")
+    dice_scores = torch.stack(dice_scores)
+    hd_scores = torch.stack(hd_scores)
+    mad_scores = torch.stack(mad_scores)
 
-    wandb.log({"dice_per_class": mean_fg_dice.tolist()})
-    wandb.log({"mean_dice": torch.mean(mean_fg_dice)})
-    wandb.log({"hd_per_class": mean_fg_hd.tolist()})
-    wandb.log({"mean_hd": torch.mean(mean_fg_hd)})
-    wandb.log({"mad_per_class": mean_fg_mad.tolist()})
-    wandb.log({"mean_mad": torch.mean(mean_fg_mad)})
+    dice_per_class, dice_std_per_class, dice_mean, dice_std = get_mean_and_std(dice_scores, "dice")
+    hd_per_class, hd_std_per_class, hd_mean, hd_std = get_mean_and_std(hd_scores, "hd")
+    mad_per_class, mad_std_per_class, mad_mean, mad_std = get_mean_and_std(mad_scores, "mad")
 
     results = {
-        "dice_per_class": mean_fg_dice.tolist(),
-        "mean_dice": torch.mean(mean_fg_dice).item(),
-        "hd_per_class": mean_fg_hd.tolist(),
-        "mean_hd": torch.mean(mean_fg_hd).item(),
-        "mad_per_class": mean_fg_mad.tolist(),
-        "mean_mad": torch.mean(mean_fg_mad).item(),
+        "dice_per_class": dice_per_class,
+        "mean_dice": dice_mean,
+        "mean_dice_std": dice_std,
+        "hd_per_class": hd_per_class,
+        "mean_hd": hd_mean,
+        "mean_hd_std": hd_std,
+        "mad_per_class": mad_per_class,
+        "mean_mad": mad_mean,
+        "mean_mad_std": mad_std,
     }
-
     with open(out_dir / "results.json", "w", encoding="utf-8") as file:
         json.dump(results, file, ensure_ascii=False, indent=4)
+
+
+def get_mean_and_std(tensor: torch.Tensor, label: str):
+    score_per_class = torch.mean(tensor, dim=0)
+    std_per_class = torch.std(tensor, dim=0)
+    mean_score = torch.mean(score_per_class).item()
+    mean_std = torch.mean(std_per_class).item()
+    print(f"{label} per class: {score_per_class}")
+    print(f"{label} std per class: {score_per_class}")
+    print(f"{label} mean: {mean_score}")
+    print(f"{label} std: {mean_std}")
+
+    score_per_class = score_per_class.tolist()
+    std_per_class = std_per_class.tolist()
+
+    wandb.log({f"{label}_per_class": score_per_class})
+    wandb.log({f"{label}_std_per_class": std_per_class})
+    wandb.log({f"mean_{label}": mean_score})
+    wandb.log({f"mean_{label}_std": mean_std})
+
+    return score_per_class, std_per_class, mean_score, mean_std
 
 
 if __name__ == "__main__":
