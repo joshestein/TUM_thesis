@@ -117,7 +117,6 @@ def run_batch_inference(
                 inference=True,
             )
 
-        hd_scores.append(calculate_hd_for_classes(masks, labels))
         dice_scores.append(calculate_dice_for_classes(masks, labels))
 
         # Convert to numpy before saving
@@ -125,8 +124,8 @@ def run_batch_inference(
         labels = labels.cpu().numpy()
 
         surface_metrics = compute_surface_metrics(masks, labels.astype(bool), spacing_mm=[s.item() for s in spacing])
-        hd_scores.append(surface_metrics["hausdorff"])
-        mad_scores.append(surface_metrics["mean_absolute_difference"])
+        hd_scores.append(torch.as_tensor(surface_metrics["hausdorff"]))
+        mad_scores.append(torch.as_tensor(surface_metrics["mean_absolute_difference"]))
 
         for i in range(len(masks)):
             save_figure(
@@ -143,8 +142,8 @@ def run_batch_inference(
 
     return (
         torch.mean(torch.stack(dice_scores), dim=0),
-        torch.mean(torch.stack(torch.as_tensor(hd_scores)), dim=0),
-        torch.mean(torch.stack(torch.as_tensor(mad_scores)), dim=0),
+        torch.mean(torch.stack(hd_scores), dim=0),
+        torch.mean(torch.stack(mad_scores), dim=0),
     )
 
 
@@ -241,7 +240,7 @@ def main(
     print(f"HD per class: {mean_fg_hd}")
     print(f"Mean HD: {torch.mean(mean_fg_hd)}")
 
-    mean_fg_mad = torch.mean(hd_scores, dim=0)
+    mean_fg_mad = torch.mean(mad_scores, dim=0)
     print(f"HD per class: {mean_fg_mad}")
     print(f"Mean HD: {torch.mean(mean_fg_mad)}")
 

@@ -75,6 +75,7 @@ def compute_surface_metrics(
 
     sd = np.empty((prediction.shape[0], prediction.shape[1]))
     hd = np.empty((prediction.shape[0], prediction.shape[1]))
+    mad = np.empty((prediction.shape[0], prediction.shape[1]))
 
     for batch_index, class_index in np.ndindex(prediction.shape[0], prediction.shape[1]):
         metrics = compute_np_surface_metrics(
@@ -86,12 +87,13 @@ def compute_surface_metrics(
         )
         hd[batch_index, class_index] = metrics["hausdorff"]
         sd[batch_index, class_index] = metrics["surface_distance"]
+        mad[batch_index, class_index] = metrics["mean_absolute_difference"]
 
     # Average over batch
     return {
         "avg_surface_distance": np.nanmean(sd, axis=0),
         "hausdorff": np.nanmean(hd, axis=0),
-        "mean_absolute_difference": np.nanmean(sd, axis=0),
+        "mean_absolute_difference": np.nanmean(mad, axis=0),
     }
 
 
