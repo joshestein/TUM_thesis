@@ -141,9 +141,9 @@ def run_batch_inference(
             )
 
     return (
-        torch.mean(torch.stack(dice_scores), dim=0),
-        torch.mean(torch.stack(hd_scores), dim=0),
-        torch.mean(torch.stack(mad_scores), dim=0),
+        torch.nanmean(torch.stack(dice_scores), dim=0),
+        torch.nanmean(torch.stack(hd_scores), dim=0),
+        torch.nanmean(torch.stack(mad_scores), dim=0),
     )
 
 
