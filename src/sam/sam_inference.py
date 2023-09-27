@@ -154,6 +154,7 @@ def main(
     neg_sample_points: int = 0,
     num_training_cases: int | None = None,
 ):
+    num_training_cases_str = "" if num_training_cases is None else f"num_training_cases_{num_training_cases}"
     num_samples_str = f"num_samples_{pos_sample_points}"
     use_bbox_str = "with_bboxes" if use_bboxes else "no_bboxes"
     neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
@@ -169,7 +170,7 @@ def main(
 
     wandb.init(
         project=project_name,
-        name=f"{dataset}_{'_'.join(filter(None, (num_samples_str, use_bbox_str, neg_samples_str)))}",
+        name=f"{dataset}_{'_'.join(filter(None, (num_training_cases_str, num_samples_str, use_bbox_str, neg_samples_str)))}",
         config={
             "dataset": dataset,
             "pos_sample_points": pos_sample_points,
