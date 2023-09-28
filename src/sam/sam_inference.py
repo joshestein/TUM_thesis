@@ -182,11 +182,11 @@ def main(
         reinit=True,
     )
 
-    out_dir = out_dir / "sam" / dataset
+    out_dir = out_dir / "sam" / dataset / use_bbox_str
     if num_training_cases is not None:
-        out_dir = out_dir / f"num_training_cases_{num_training_cases}" / num_samples_str
-    else:
-        out_dir = out_dir / use_bbox_str / num_samples_str
+        out_dir = out_dir / f"num_training_cases_{num_training_cases}"
+
+    out_dir = out_dir / num_samples_str
 
     if neg_sample_points > 0:
         out_dir = out_dir / neg_samples_str
