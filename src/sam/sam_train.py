@@ -23,6 +23,7 @@ def train(
     pos_sample_points: int,
     metric_handler: MetricHandler,
     neg_sample_points: int = 0,
+    use_bboxes=True,
 ):
     sam.image_encoder.requires_grad_(False)
     sam.prompt_encoder.requires_grad_(False)
@@ -47,6 +48,7 @@ def train(
                 device=device,
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
+                use_bboxes=use_bboxes,
             )
 
             epoch_loss += loss
@@ -65,6 +67,7 @@ def train(
                 loss_function=loss_function,
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
+                use_bboxes=use_bboxes,
                 metric_handler=metric_handler,
             )
 
@@ -94,7 +97,8 @@ def get_epoch_loss(
     loss_function: torch.nn.Module,
     device: str | torch.device,
     pos_sample_points: int,
-    neg_sample_points: int = 0,
+    neg_sample_points: int,
+    use_bboxes: bool,
 ):
     inputs, labels, patients = (batch_data["image"].to(device), batch_data["label"].to(device), batch_data["patient"])
 
@@ -106,6 +110,7 @@ def get_epoch_loss(
         patients=patients,
         pos_sample_points=pos_sample_points,
         neg_sample_points=neg_sample_points,
+        use_bboxes=use_bboxes,
     )
 
     optimizer.zero_grad()
@@ -123,7 +128,8 @@ def validate(
     loss_function: torch.nn.Module,
     metric_handler: MetricHandler,
     pos_sample_points: int,
-    neg_sample_points: int = 0,
+    neg_sample_points: int,
+    use_bboxes: bool,
 ):
     sam.eval()
     with torch.no_grad():
@@ -140,6 +146,7 @@ def validate(
                 metric_handler=metric_handler,
                 pos_sample_points=pos_sample_points,
                 neg_sample_points=neg_sample_points,
+                use_bboxes=use_bboxes,
             )
 
         validation_loss /= step
@@ -156,7 +163,8 @@ def get_validation_loss(
     device: str | torch.device,
     metric_handler: MetricHandler,
     pos_sample_points: int,
-    neg_sample_points: int = 0,
+    neg_sample_points: int,
+    use_bboxes: bool,
 ):
     val_inputs, val_labels, val_patients = (
         val_data["image"].to(device),
@@ -170,6 +178,7 @@ def get_validation_loss(
         patients=val_patients,
         pos_sample_points=pos_sample_points,
         neg_sample_points=neg_sample_points,
+        use_bboxes=use_bboxes,
     )
 
     val_loss = compute_val_loss_and_metrics(
