@@ -19,6 +19,7 @@ def main(
     dataset_name: str,
     pos_sample_points: int,
     neg_sample_points: int = 0,
+    use_bboxes: bool = True,
     num_training_cases: int | None = None,
     num_slices: int | None = None,
 ):
@@ -107,8 +108,9 @@ def main(
         device=device,
         out_dir=out_dir,
         pos_sample_points=pos_sample_points,
-        metric_handler=metric_handler,
         neg_sample_points=neg_sample_points,
+        use_bboxes=use_bboxes,
+        metric_handler=metric_handler,
     )
 
 
@@ -134,6 +136,7 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument("--bboxes", "-b", type=bool, default=True)
     parser.add_argument(
         "--num_training_cases",
         "-c",
@@ -160,12 +163,6 @@ if __name__ == "__main__":
                 dataset_name=dataset,
                 pos_sample_points=args.pos_sample_points,
                 neg_sample_points=args.neg_sample_points,
+                use_bboxes=args.bboxes,
                 num_training_cases=num_cases,
-            )
-        for num_slices in dataset_slice_dict[dataset]:
-            main(
-                dataset_name=dataset,
-                pos_sample_points=args.pos_sample_points,
-                neg_sample_points=args.neg_sample_points,
-                num_slices=num_slices,
             )
