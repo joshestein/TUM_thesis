@@ -70,22 +70,23 @@ def main(
     neg_samples_str = "" if neg_sample_points == 0 else f"neg_samples_{neg_sample_points}"
     num_training_cases_str = "" if num_training_cases is None else f"num_training_cases_{num_training_cases}"
     num_slices_str = "" if num_slices is None else f"num_slices_{num_slices}"
+    bbox_str = "with_bboxes" if use_bboxes else "no_bboxes"
 
     out_dir = (
         root_out_dir
         / "sam"
         / dataset_name
         / "_".join(filter(None, (num_training_cases_str, num_slices_str)))
+        / bbox_str
         / num_samples_str
+        / neg_samples_str
     )
-    if neg_samples_str:
-        out_dir = out_dir / neg_samples_str
 
     os.makedirs(out_dir, exist_ok=True)
 
     wandb.init(
         project=f"sam_{dataset_name}",
-        name=f"{'_'.join(filter(None, (num_training_cases_str, num_slices_str, num_samples_str, neg_samples_str)))}",
+        name=f"{'_'.join(filter(None, (num_training_cases_str, num_slices_str, bbox_str, num_samples_str, neg_samples_str)))}",
         config=config["hyperparameters"],
         dir=log_dir,
         mode="disabled",
