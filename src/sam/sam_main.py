@@ -62,7 +62,7 @@ def main(
         validation_split=validation_split,
     )
 
-    sam = setup_sam(root_dir, device)
+    sam = setup_sam(root_dir / "models", device)
 
     optimizer = torch.optim.Adam(sam.mask_decoder.parameters(), lr=learning_rate)
 
