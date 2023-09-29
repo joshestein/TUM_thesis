@@ -57,6 +57,7 @@ def main(
     train_loader, val_loader = get_train_dataloaders(
         train_dataset=train_data,
         val_dataset=val_data,
+        num_training_cases=num_training_cases,
         batch_size=batch_size,
         validation_split=validation_split,
     )

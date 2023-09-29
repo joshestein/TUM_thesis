@@ -14,27 +14,24 @@ from src.datasets.mnms_dataset import MNMsDataset
 def get_train_dataloaders(
     train_dataset: ACDCDataset | MNMsDataset,
     val_dataset: ACDCDataset | MNMsDataset,
+    num_training_cases: int | None = None,
     batch_size: int = 1,
     num_workers: int = 0,
     validation_split: float = 0.8,
     shuffle=True,
 ):
     total_training_number = len(train_dataset)
-    train_size = int(validation_split * total_training_number)
-    # val_size = total_training_number - train_size
+    train_size = num_training_cases if num_training_cases is not None else int(validation_split * total_training_number)
 
-    # train_d, validation_d = random_split(train_dataset, [train_size, val_size])
-    # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    # val_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    # return train_loader, val_loader
-
-    # TODO: separate train and validation datasets with separate transforms is not working
+    # Always use a val_size relative to the total number of samples, not the (limited) number of samples used for
+    # training
+    val_size = total_training_number - int(validation_split * total_training_number)
     indices = np.arange(total_training_number)
 
     if shuffle:
         np.random.shuffle(indices)
 
-    train_indices, val_indices = indices[:train_size], indices[train_size:]
+    train_indices, val_indices = indices[:train_size], indices[-val_size:]
 
     train_loader = DataLoader(
         Subset(train_dataset, train_indices), batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
