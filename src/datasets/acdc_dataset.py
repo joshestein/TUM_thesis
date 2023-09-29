@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 class ACDCDataset(Dataset):
     def __init__(
         self,
-        data_dir: str | Path,
+        data_dir: Path,
         transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose = None,
         full_volume=False,
         random_slice=False,

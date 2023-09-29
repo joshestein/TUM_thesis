@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 class MNMsDataset(Dataset):
     def __init__(
         self,
-        data_dir: str | Path,
+        data_dir: Path,
         transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose | None = None,
         random_slice=False,
         force_foreground=False,
