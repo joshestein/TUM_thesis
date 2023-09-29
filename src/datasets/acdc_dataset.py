@@ -14,8 +14,6 @@ class ACDCDataset(Dataset):
         data_dir: str | Path,
         transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose = None,
         full_volume=False,
-        num_training_cases: int | None = None,
-        shuffle=True,
         random_slice=False,
         force_foreground=False,
     ):
@@ -23,24 +21,16 @@ class ACDCDataset(Dataset):
         :param data_dir: Root data dir, in which "training" and "testing" folders are expected
         :param transform: Any transforms that should be applied
         :param full_volume: Whether to read the full data volume, in addition to the end diastole and systole frames
-        :param num_training_cases: The number of cases to use for training
-        :param shuffle: Whether to shuffle the dataset
         :param force_foreground: Whether to ensure that sampled slices contain all foreground classes
         """
         self.data_dir = Path(data_dir)
 
         patient_dirs = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
-        if shuffle:
-            np.random.shuffle(patient_dirs)
 
         self.patients, self.labels = [], []
         for patient_dir in patient_dirs:
             self.patients.extend(sorted(patient_dir.glob("*[0-9].nii.gz")))
             self.labels.extend(sorted(patient_dir.glob("*_gt.nii.gz")))
-
-        if num_training_cases is not None:
-            self.patients = self.patients[:num_training_cases]
-            self.labels = self.labels[:num_training_cases]
 
         self.transform = transform
         self.full_volume = full_volume

@@ -49,7 +49,6 @@ def main(
         spatial_dims=spatial_dims,
         data_dir=data_dir,
         augment=augment,
-        num_training_cases=num_training_cases,
         num_slices=num_slices,
         nnunet_transforms=True,
         force_foreground_classes=True,

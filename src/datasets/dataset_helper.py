@@ -27,14 +27,12 @@ class DatasetHelper(ABC):
         spatial_dims: int,
         data_dir: Path,
         augment: bool = True,
-        num_training_cases: int | None = None,
         num_slices: int | None = None,
         sample_regions: list[str] = ("apex", "mid", "base"),
         nnunet_transforms=False,
         force_foreground_classes: bool = False,
     ):
         self.data_dir = data_dir
-        self.num_training_cases = num_training_cases
         self.random_slice = spatial_dims == 2
         self.force_all_foreground_classes = force_foreground_classes
 
@@ -66,14 +64,12 @@ class ACDCDatasetHelper(DatasetHelper):
         train_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.train_transforms,
-            num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
             force_foreground=self.force_all_foreground_classes,
         )
         val_data = ACDCDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
-            num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
             force_foreground=self.force_all_foreground_classes,
         )
@@ -101,14 +97,12 @@ class MNMsDatasetHelper(DatasetHelper):
         train_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.train_transforms,
-            num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
             force_foreground=self.force_all_foreground_classes,
         )
         val_data = MNMsDataset(
             data_dir=data_dir,
             transform=self.val_transforms,
-            num_training_cases=self.num_training_cases,
             random_slice=self.random_slice,
             force_foreground=self.force_all_foreground_classes,
         )

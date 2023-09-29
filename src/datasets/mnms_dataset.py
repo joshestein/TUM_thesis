@@ -14,31 +14,21 @@ class MNMsDataset(Dataset):
         self,
         data_dir: str | Path,
         transform: monai.transforms.Compose | batchgenerators.transforms.abstract_transforms.Compose | None = None,
-        num_training_cases: int | None = None,
-        shuffle=True,
         random_slice=False,
         force_foreground=False,
     ):
         """
         :param data_dir: Path to training/testing data
         :param transform: Any transforms that should be applied
-        :param num_training_cases: The number of cases to use for training
-        :param shuffle: Whether to shuffle the dataset
         :param force_foreground: Whether to ensure that sampled slices contain all foreground classes
         """
         self.data_dir = data_dir
         patient_dirs = sorted([Path(f.path) for f in os.scandir(self.data_dir) if f.is_dir()])
-        if shuffle:
-            np.random.shuffle(patient_dirs)
 
         self.patients, self.labels = [], []
         for patient in patient_dirs:
             self.patients.extend(sorted(patient.glob("*[0-9].nii.gz")))
             self.labels.extend(sorted(patient.glob("*[0-9]_gt.nii.gz")))
-
-        if num_training_cases is not None:
-            self.patients = self.patients[:num_training_cases]
-            self.labels = self.labels[:num_training_cases]
 
         self.transform = transform
         self.random_slice = random_slice
