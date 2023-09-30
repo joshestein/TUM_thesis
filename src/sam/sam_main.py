@@ -159,11 +159,12 @@ if __name__ == "__main__":
     }
 
     for dataset in ["acdc", "mnms"]:
-        for num_cases in dataset_case_dict[dataset]:
-            main(
-                dataset_name=dataset,
-                pos_sample_points=args.pos_sample_points,
-                neg_sample_points=args.neg_sample_points,
-                use_bboxes=args.bboxes,
-                num_training_cases=num_cases,
-            )
+        for bboxes in [True, False]:
+            for num_cases in dataset_case_dict[dataset]:
+                main(
+                    dataset_name=dataset,
+                    pos_sample_points=args.pos_sample_points,
+                    neg_sample_points=args.neg_sample_points,
+                    use_bboxes=bboxes,
+                    num_training_cases=num_cases,
+                )

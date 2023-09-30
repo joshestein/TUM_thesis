@@ -327,5 +327,5 @@ if __name__ == "__main__":
 
         # Fine-tuned inference
         for num_cases in dataset_case_dict[dataset]:
-            # We only fine-tune with 2 positive sample points, 1 neg sample point, with bboxes
-            main(dataset, 2, True, 1, num_cases)
+            for use_bboxes in [True, False]:
+                main(dataset, 2, use_bboxes, 1, num_cases)
