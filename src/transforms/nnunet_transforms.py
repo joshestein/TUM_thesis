@@ -26,6 +26,7 @@ def get_nnunet_transforms():
         EnsureBatchDimension(),
         RenameTransform("image", "data", True),
         RenameTransform("label", "seg", True),
+        # CropOrPad(patch_size_spatial),
         SpatialTransform(
             patch_size_spatial,
             patch_center_dist_from_border=None,
@@ -88,6 +89,7 @@ def get_nnunet_transforms():
 
     val_transforms = [
         EnsureBatchDimension(),
+        # CropOrPad(patch_size_spatial),
         RemoveLabelTransform(-1, 0, input_key="label", output_key="label"),
         RemoveBatchDimension(),
         NumpyToTensor(["image", "label"], "float"),
