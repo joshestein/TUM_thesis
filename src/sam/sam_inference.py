@@ -141,9 +141,9 @@ def run_batch_inference(
             )
 
     return (
-        torch.nanmean(torch.stack(dice_scores), dim=0),
-        torch.nanmean(torch.stack(hd_scores), dim=0),
-        torch.nanmean(torch.stack(mad_scores), dim=0),
+        torch.stack(dice_scores),
+        torch.stack(hd_scores),
+        torch.stack(mad_scores),
     )
 
 
@@ -266,10 +266,10 @@ def main(
 
 
 def get_mean_and_std(tensor: torch.Tensor, label: str):
-    score_per_class = torch.mean(tensor, dim=0)
+    score_per_class = torch.nanmean(tensor, dim=0)
     std_per_class = torch.std(tensor, dim=0)
-    mean_score = torch.mean(score_per_class).item()
-    mean_std = torch.mean(std_per_class).item()
+    mean_score = torch.nanmean(score_per_class).item()
+    mean_std = torch.nanmean(std_per_class).item()
     print(f"{label} per class: {score_per_class}")
     print(f"{label} std per class: {score_per_class}")
     print(f"{label} mean: {mean_score}")
