@@ -200,20 +200,25 @@ def get_batch_predictions(
                 bbox = None
                 image_bbox.append(bbox)
 
-            point = transform.apply_coords_torch(torch.as_tensor(image_points[i], device=sam.device), image.shape[1:])
-            point_label = torch.as_tensor(image_point_labels[i], device=sam.device)
-            point, point_label = point.unsqueeze(0), point_label.unsqueeze(0)
+            batched_dict = {
+                "image": prepared_image,
+                "boxes": bbox,
+                "original_size": image.shape[1:],
+                "patient": patients[index],
+            }
 
-            batched_input.append(
-                {
-                    "image": prepared_image,
-                    "boxes": bbox,
-                    "point_coords": point,
-                    "point_labels": point_label,
-                    "original_size": image.shape[1:],
-                    "patient": patients[index],
-                }
-            )
+            try:
+                point = transform.apply_coords_torch(
+                    torch.as_tensor(image_points[i], device=sam.device), image.shape[1:]
+                )
+                point_label = torch.as_tensor(image_point_labels[i], device=sam.device)
+                point, point_label = point.unsqueeze(0), point_label.unsqueeze(0)
+                batched_dict["point_coords"] = point
+                batched_dict["point_labels"] = point_label
+            except:
+                pass
+
+            batched_input.append(batched_dict)
 
         bboxes.append(image_bbox)
 
