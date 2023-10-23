@@ -61,26 +61,25 @@ def get_sam_points(
         return np.array([]), np.array([])
 
     num_classes = ground_truth.shape[0]
-
-    points_per_class = [sample_points(class_truth, num_pos_points) for class_truth in ground_truth]
     labels_per_class = np.concatenate(
         (
             np.ones((num_classes, num_pos_points), dtype=int),
-            # -1 since we sample negatively from the N-1 classes
-            np.zeros((num_classes, num_neg_points * (num_classes - 1)), dtype=int),
+            np.zeros((num_classes, num_neg_points), dtype=int),
         ),
         axis=1,
     )
 
-    if num_neg_points > 0:
-        for i in range(num_classes):
-            # Instead of sampling new negative points, we use the previously sampled positive points as negative points
-            # for other classes.
-            random_indices = np.random.choice(num_pos_points, num_neg_points, replace=True)
-            sample = points_per_class[i][random_indices]
-            for j in range(num_classes):
-                if i != j:
-                    points_per_class[j] = np.append(points_per_class[j], sample, axis=0)
+    if num_pos_points > 0:
+        points_per_class = [sample_points(class_truth, num_pos_points) for class_truth in ground_truth]
+    else:
+        points_per_class = [sample_points(class_truth, num_neg_points) for class_truth in ground_truth]
+        # Rotate the array so that the negative samples match different classes
+        points_per_class.append(points_per_class.pop(0))
+
+    if num_pos_points > 0 and num_neg_points > 0:
+        points_per_class, labels_per_class = sample_neg_from_pos(
+            num_classes, num_pos_points, num_neg_points, points_per_class
+        )
 
     return np.array(points_per_class), labels_per_class
 
@@ -100,6 +99,28 @@ def sample_points(mask: np.ndarray, num_points: int) -> np.ndarray:
     points.extend(sampled_points)
 
     return np.array(points)
+
+
+def sample_neg_from_pos(num_classes: int, num_pos_points: int, num_neg_points: int, points_per_class):
+    labels_per_class = np.concatenate(
+        (
+            np.ones((num_classes, num_pos_points), dtype=int),
+            # -1 since we sample negatively from the N-1 classes
+            np.zeros((num_classes, num_neg_points * (num_classes - 1)), dtype=int),
+        ),
+        axis=1,
+    )
+
+    for i in range(num_classes):
+        # Instead of sampling new negative points, we use the previously sampled positive points as negative points
+        # for other classes.
+        random_indices = np.random.choice(num_pos_points, num_neg_points, replace=True)
+        sample = points_per_class[i][random_indices]
+        for j in range(num_classes):
+            if i != j:
+                points_per_class[j] = np.append(points_per_class[j], sample, axis=0)
+
+    return points_per_class, labels_per_class
 
 
 def show_mask(mask, ax, random_color=False):
