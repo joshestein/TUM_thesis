@@ -416,7 +416,9 @@ def get_and_save_embeddings(
     embeddings_dir: Path = Path(os.getcwd()) / "data" / "embeddings",
 ):
     image_embeddings = []
-    # TODO: we are computting the embeddings one-by-one. We should compute them all in one go.
+    os.makedirs(embeddings_dir, exist_ok=True)
+
+    # TODO: we are computing the embeddings one-by-one. We should compute them all in one go.
     with torch.no_grad():
         for i in range(0, len(batched_input), num_classes):
             patient = batched_input[i]["patient"]
