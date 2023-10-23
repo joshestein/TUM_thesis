@@ -154,8 +154,8 @@ def show_box(box, ax):
     if box is None or any(v is None for v in box):
         return
 
-    if isinstance(box, torch.Tensor):
-        box = box.cpu().numpy()
+    if isinstance(box[0], torch.Tensor):
+        box = [b.cpu().numpy() for b in box]
 
     x0, y0 = box[0], box[1]
     w, h = box[2] - box[0], box[3] - box[1]
