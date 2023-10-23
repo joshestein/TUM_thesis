@@ -57,6 +57,9 @@ def get_sam_points(
 
     # If negative points are given, we re-use the positively sampled points as negative points for other classes.
 
+    if num_pos_points == 0 and num_neg_points == 0:
+        return np.array([]), np.array([])
+
     num_classes = ground_truth.shape[0]
 
     points_per_class = [sample_points(class_truth, num_pos_points) for class_truth in ground_truth]
